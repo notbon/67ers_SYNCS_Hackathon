@@ -179,3 +179,74 @@ export async function removeFriendship(id: string): Promise<void> {
   const { error } = await supabase.from("friendships").delete().eq("id", id);
   if (error) throw error;
 }
+
+/** How the viewer is related to someone in search results. */
+export type RelationshipStatus = "none" | "friends" | "outgoing" | "incoming";
+
+export type SearchResult = Person & {
+  status: RelationshipStatus;
+  /** friendships row id — present for outgoing/incoming, used to cancel/accept. */
+  requestId?: string;
+};
+
+/**
+ * Find people to add as friends, by name or by email.
+ *
+ * Names match on a partial (case-insensitive) basis, but EMAIL ONLY MATCHES
+ * EXACTLY, and emails are never returned to the client. A partial email search
+ * would let anyone type "@gmail" and enumerate the address of every user on
+ * the platform; requiring the full address means you can only find someone
+ * whose email you already knew.
+ */
+export async function findPeople(
+  query: string,
+  viewerId: string,
+  limit = 12,
+): Promise<SearchResult[]> {
+  const term = query.trim();
+  if (term.length < 2) return [];
+
+  const byEmail = term.includes("@");
+
+  const base = supabase.from("users").select("id, name").neq("id", viewerId);
+  const { data, error } = byEmail
+    ? await base.eq("email", term.toLowerCase()).limit(limit)
+    : await base.ilike("name", `%${term}%`).limit(limit);
+
+  if (error) throw error;
+
+  const people = (data ?? []) as Person[];
+  if (people.length === 0) return [];
+
+  // One round trip for every friendship touching the viewer, then match up.
+  const { data: links, error: linkError } = await supabase
+    .from("friendships")
+    .select("id, requester_id, addressee_id, status");
+
+  if (linkError) throw linkError;
+
+  type Link = {
+    id: string;
+    requester_id: string;
+    addressee_id: string;
+    status: string;
+  };
+
+  const byPerson = new Map<string, Link>();
+  ((links ?? []) as Link[]).forEach((l) => {
+    const other = l.requester_id === viewerId ? l.addressee_id : l.requester_id;
+    byPerson.set(other, l);
+  });
+
+  return people.map((p) => {
+    const link = byPerson.get(p.id);
+    if (!link) return { ...p, status: "none" as const };
+    if (link.status === "accepted")
+      return { ...p, status: "friends" as const, requestId: link.id };
+    return {
+      ...p,
+      status: link.requester_id === viewerId ? ("outgoing" as const) : ("incoming" as const),
+      requestId: link.id,
+    };
+  });
+}
