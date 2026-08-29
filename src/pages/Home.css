@@ -243,3 +243,98 @@
     box-shadow: var(--shadow-hard-sm);
   }
 }
+
+.nearby-map-section {
+  padding: 70px 0;
+}
+
+.nearby-map-section h2 {
+  margin: 0 0 6px;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.nearby-map-section > .wrap > p {
+  margin: 0 0 28px;
+  color: #5a5a5a;
+  font-size: 18px;
+}
+
+.nearby-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.4fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nearby-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1.5px solid #d8d8d8;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.nearby-card:hover {
+  transform: translateY(-2px);
+  border-color: #000;
+  box-shadow: 5px 5px 0 #000;
+}
+
+.nearby-card-sport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #5c5c5c;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nearby-card h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.nearby-card p {
+  margin: 0 0 14px;
+  color: #666;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.nearby-card strong {
+  font-size: 15px;
+}
+
+.nearby-map {
+  width: 100%;
+  height: 520px;
+  min-height: 520px;
+  border: 1.5px solid #000;
+}
+
+@media (max-width: 900px) {
+  .nearby-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .nearby-map {
+    height: 420px;
+    min-height: 420px;
+  }
+}
