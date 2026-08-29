@@ -7,6 +7,7 @@ export interface Profile {
   name: string;
   email: string;
   skill_level: string | null;
+  avatar_url?: string | null;
 }
 
 export interface Match {

@@ -9,6 +9,7 @@ import {
   fetchCreatedMatches,
   fetchJoinedMatches,
   deleteAccount,
+  uploadAvatar,
 } from "../services/profileService";
 import type { Profile as ProfileType, Match } from "../types";
 import "./Profile.css";
@@ -52,6 +53,9 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const [createdMatches, setCreatedMatches] = useState<Match[]>([]);
   const [joinedMatches, setJoinedMatches] = useState<Match[]>([]);
@@ -113,6 +117,22 @@ export default function Profile() {
     }
   }
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!userId || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    setAvatarUploading(true);
+    setAvatarError(null);
+    try {
+      const url = await uploadAvatar(userId, file);
+      const updated = await updateProfile(userId, { avatar_url: url });
+      if (updated) setProfile(updated);
+    } catch (err) {
+      setAvatarError((err as Error).message);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
   async function handleDeleteAccount() {
     if (!userId) return;
     setDeleting(true);
@@ -147,32 +167,53 @@ export default function Profile() {
         {profileLoading ? (
           <p>Loading profile...</p>
         ) : (
-          <form onSubmit={handleProfileSubmit} className="profile-form">
-            <label className="profile-field">
-              <span>Name</span>
-              <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </label>
+          <>
+            <div className="profile-avatar-block">
+              <img
+                src={profile?.avatar_url || "/default-avatar.png"}
+                alt="Profile"
+                className="profile-avatar"
+              />
+              <label className="profile-link-button">
+                {avatarUploading ? "Uploading..." : "Change Photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  disabled={avatarUploading}
+                  style={{ display: "none" }}
+                />
+              </label>
+              {avatarError && <p className="profile-error">{avatarError}</p>}
+            </div>
 
-            <label className="profile-field">
-              <span>Email</span>
-              <input value={session?.user.email ?? ""} disabled />
-            </label>
+            <form onSubmit={handleProfileSubmit} className="profile-form">
+              <label className="profile-field">
+                <span>Name</span>
+                <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </label>
 
-            <label className="profile-field">
-              <span>Skill Level</span>
-              <select value={editSkillLevel} onChange={(e) => setEditSkillLevel(e.target.value)}>
-                <option value="">Not set</option>
-                {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
-              </select>
-            </label>
+              <label className="profile-field">
+                <span>Email</span>
+                <input value={session?.user.email ?? ""} disabled />
+              </label>
 
-            {profileError && <p className="profile-error">{profileError}</p>}
-            {saveSuccess && !profileError && <p className="profile-notice">Saved!</p>}
+              <label className="profile-field">
+                <span>Skill Level</span>
+                <select value={editSkillLevel} onChange={(e) => setEditSkillLevel(e.target.value)}>
+                  <option value="">Not set</option>
+                  {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+                </select>
+              </label>
 
-            <button type="submit" className="profile-button" disabled={savingProfile}>
-              {savingProfile ? "Saving..." : "Save Changes"}
-            </button>
-          </form>
+              {profileError && <p className="profile-error">{profileError}</p>}
+              {saveSuccess && !profileError && <p className="profile-notice">Saved!</p>}
+
+              <button type="submit" className="profile-button" disabled={savingProfile}>
+                {savingProfile ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          </>
         )}
       </div>
 
