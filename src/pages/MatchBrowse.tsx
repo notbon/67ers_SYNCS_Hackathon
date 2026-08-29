@@ -6,7 +6,10 @@ import {
   locationScore,
 } from "../lib/locationMatch";
 import SportIcon from "../components/SportIcon";
-import type { Match } from "../types";
+import HostBadge from "../components/HostBadge";
+import { fetchHostsByToken } from "../services/hostService";
+import { getHostToken, type PlayerToken } from "../lib/playerToken";
+import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
 
 // Keep these in step with the options offered in CreateMatch.tsx.
@@ -107,6 +110,7 @@ function formatTime(time: string): string {
 
 export default function MatchBrowse() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -130,6 +134,26 @@ export default function MatchBrowse() {
       cancelled = true;
     };
   }, []);
+
+  // Resolve host profiles (photo + name) for the loaded matches in one batch.
+  // Purely decorative, so failures inside fetchHostsByToken degrade to no badge.
+  useEffect(() => {
+    if (matches.length === 0) return;
+
+    let cancelled = false;
+    fetchHostsByToken(matches.map(getHostToken)).then((resolved) => {
+      if (!cancelled) setHosts(resolved);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
+
+  function hostFor(match: Match): MatchHost | null {
+    const token = getHostToken(match);
+    return (token && hosts.get(token)) || match.host || null;
+  }
 
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -319,6 +343,10 @@ export default function MatchBrowse() {
                         <dd>up to {match.max_players}</dd>
                       </div>
                     </dl>
+
+                    <div className="match-card-foot">
+                      <HostBadge host={hostFor(match)} />
+                    </div>
                   </Link>
                 </li>
               ))}
