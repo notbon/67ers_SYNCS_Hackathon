@@ -13,7 +13,11 @@ import {
   fetchCoAttendees,
   fetchFriends,
   fetchMyMatches,
+  fetchOutgoingRequests,
   fetchPendingRequests,
+  removeFriendship,
+  searchUsers,
+  sendFriendRequest,
 } from "../services/friendService";
 import type { FriendRequest, Person } from "../services/friendService";
 import "./ChatWidget.css";
@@ -57,6 +61,13 @@ export function ChatWidget() {
   >([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
+  const [outgoing, setOutgoing] = useState<Map<string, string>>(new Map());
+
+  // Friend search
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Person[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -121,17 +132,59 @@ export function ChatWidget() {
         fetchFriends(userId),
         fetchCoAttendees(userId),
         fetchPendingRequests(userId),
+        fetchOutgoingRequests(userId),
       ])
-        .then(([friends, coAttendees, pending]) => {
+        .then(([friends, coAttendees, pending, sent]) => {
           const merged = new Map<string, Person>();
           friends.forEach((p) => merged.set(p.id, p));
           coAttendees.forEach((p) => merged.set(p.id, p));
           setPeople([...merged.values()]);
           setRequests(pending);
+          setFriendIds(new Set(friends.map((f) => f.id)));
+          setOutgoing(new Map(sent.map((r) => [r.addresseeId, r.id])));
         })
         .catch((err) => console.error("Failed to load people:", err));
     }
   }, [open, userId, tab]);
+
+  // --- Pending request count for the button badge ---
+  useEffect(() => {
+    if (!userId) {
+      setRequests([]);
+      return;
+    }
+    let cancelled = false;
+    fetchPendingRequests(userId)
+      .then((rows) => {
+        if (!cancelled) setRequests(rows);
+      })
+      .catch((err) => console.error("Failed to load requests:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // --- Debounced people search ---
+  useEffect(() => {
+    if (!userId || tab !== "friends") return;
+
+    const term = query.trim();
+    if (term.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    const timer = window.setTimeout(() => {
+      searchUsers(term, userId)
+        .then(setResults)
+        .catch((err) => console.error("Search failed:", err))
+        .finally(() => setSearching(false));
+    }, 280);
+
+    return () => window.clearTimeout(timer);
+  }, [query, userId, tab]);
 
   // --- Keep the newest message in view ---
   useEffect(() => {
@@ -177,13 +230,41 @@ export function ChatWidget() {
     }
   }
 
-  async function accept(id: string) {
+  async function accept(request: FriendRequest) {
     try {
-      await acceptFriendRequest(id);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
-      if (userId) setPeople(await fetchFriends(userId));
+      await acceptFriendRequest(request.id);
+      setRequests((prev) => prev.filter((r) => r.id !== request.id));
+      setFriendIds((prev) => new Set(prev).add(request.requester.id));
+      setPeople((prev) =>
+        prev.some((p) => p.id === request.requester.id)
+          ? prev
+          : [...prev, request.requester],
+      );
     } catch (err) {
       console.error("Failed to accept request:", err);
+      setError("Couldn't accept that request.");
+    }
+  }
+
+  async function decline(id: string) {
+    try {
+      await removeFriendship(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error("Failed to decline request:", err);
+      setError("Couldn't decline that request.");
+    }
+  }
+
+  async function addFriend(person: Person) {
+    if (!userId) return;
+    try {
+      await sendFriendRequest(userId, person.id);
+      const sent = await fetchOutgoingRequests(userId);
+      setOutgoing(new Map(sent.map((r) => [r.addresseeId, r.id])));
+    } catch (err) {
+      console.error("Failed to send friend request:", err);
+      setError("Couldn't send that request.");
     }
   }
 
@@ -197,9 +278,20 @@ export function ChatWidget() {
         className={`chat-fab ${open ? "is-open" : ""}`}
         aria-expanded={open}
         aria-controls="chat-panel"
-        aria-label={open ? "Close chat" : "Open chat"}
+        aria-label={
+          open
+            ? "Close chat"
+            : requests.length > 0
+              ? `Open chat, ${requests.length} friend request${requests.length === 1 ? "" : "s"} waiting`
+              : "Open chat"
+        }
         onClick={() => setOpen((o) => !o)}
       >
+        {!open && requests.length > 0 && (
+          <span className="chat-fab-badge" aria-hidden="true">
+            {requests.length}
+          </span>
+        )}
         {open ? (
           <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -343,22 +435,96 @@ export function ChatWidget() {
               </ul>
             ) : (
               <div className="chat-list-wrap">
+                <div className="chat-search">
+                  <label htmlFor="friend-search" className="visually-hidden">
+                    Search people by name
+                  </label>
+                  <input
+                    id="friend-search"
+                    type="search"
+                    className="chat-search-input"
+                    placeholder="Add a friend by name…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </div>
+
+                {query.trim().length >= 2 && (
+                  <section aria-label="Search results">
+                    <h3 className="chat-subhead">
+                      {searching ? "Searching…" : "Results"}
+                    </h3>
+                    <ul className="chat-list" role="list">
+                      {!searching && results.length === 0 && (
+                        <li className="chat-empty">No one found by that name.</li>
+                      )}
+                      {results.map((p) => {
+                        const isFriend = friendIds.has(p.id);
+                        const pendingId = outgoing.get(p.id);
+                        return (
+                          <li key={p.id} className="chat-request">
+                            <span className="chat-list-name">{p.name}</span>
+                            {isFriend ? (
+                              <span className="chat-tag">Friends</span>
+                            ) : pendingId ? (
+                              <button
+                                type="button"
+                                className="chat-cancel"
+                                onClick={() => {
+                                  void removeFriendship(pendingId).then(() =>
+                                    setOutgoing((prev) => {
+                                      const next = new Map(prev);
+                                      next.delete(p.id);
+                                      return next;
+                                    }),
+                                  );
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="chat-accept"
+                                onClick={() => addFriend(p)}
+                              >
+                                Add
+                              </button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                )}
+
                 {requests.length > 0 && (
-                  <section className="chat-requests">
-                    <h3 className="chat-subhead">Friend requests</h3>
+                  <section aria-label="Friend requests">
+                    <h3 className="chat-subhead">
+                      Friend requests ({requests.length})
+                    </h3>
                     <ul className="chat-list" role="list">
                       {requests.map((r) => (
                         <li key={r.id} className="chat-request">
                           <span className="chat-list-name">
                             {r.requester.name}
                           </span>
-                          <button
-                            type="button"
-                            className="chat-accept"
-                            onClick={() => accept(r.id)}
-                          >
-                            Accept
-                          </button>
+                          <span className="chat-request-actions">
+                            <button
+                              type="button"
+                              className="chat-accept"
+                              onClick={() => accept(r)}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              className="chat-cancel"
+                              onClick={() => decline(r.id)}
+                            >
+                              Decline
+                            </button>
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -369,7 +535,8 @@ export function ChatWidget() {
                 <ul className="chat-list" role="list">
                   {people.length === 0 && (
                     <li className="chat-empty">
-                      No one yet. Join a match to meet people you can message.
+                      No one yet. Add a friend above, or join a match to meet
+                      people you can message.
                     </li>
                   )}
                   {people.map((p) => (
@@ -382,7 +549,12 @@ export function ChatWidget() {
                           setThreadTitle(p.name);
                         }}
                       >
-                        <span className="chat-list-name">{p.name}</span>
+                        <span className="chat-list-name">
+                          {p.name}
+                          {friendIds.has(p.id) && (
+                            <span className="chat-tag-inline">Friend</span>
+                          )}
+                        </span>
                         <span className="chat-list-meta">Message</span>
                       </button>
                     </li>

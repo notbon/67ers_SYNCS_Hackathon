@@ -128,3 +128,54 @@ export async function acceptFriendRequest(id: string): Promise<void> {
 
   if (error) throw error;
 }
+
+/**
+ * Find people by name so the user can send them a friend request.
+ *
+ * Friend *requests* are deliberately open to anyone — that's how you become
+ * friends in the first place. Messaging stays gated by can_message() in the
+ * database, so finding someone here doesn't let you message them.
+ */
+export async function searchUsers(
+  query: string,
+  viewerId: string,
+  limit = 8,
+): Promise<Person[]> {
+  const term = query.trim();
+  if (term.length < 2) return [];
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, name")
+    .ilike("name", `%${term}%`)
+    .neq("id", viewerId)
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as Person[];
+}
+
+/** Requests this user has sent that haven't been accepted yet. */
+export async function fetchOutgoingRequests(
+  userId: string,
+): Promise<{ id: string; addresseeId: string }[]> {
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("id, addressee_id")
+    .eq("status", "pending")
+    .eq("requester_id", userId);
+
+  if (error) throw error;
+
+  type Row = { id: string; addressee_id: string };
+  return ((data ?? []) as Row[]).map((r) => ({
+    id: r.id,
+    addresseeId: r.addressee_id,
+  }));
+}
+
+/** Decline an incoming request, or cancel one you sent. */
+export async function removeFriendship(id: string): Promise<void> {
+  const { error } = await supabase.from("friendships").delete().eq("id", id);
+  if (error) throw error;
+}
