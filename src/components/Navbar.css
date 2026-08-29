@@ -117,3 +117,34 @@
     padding: 13px 14px;
   }
 }
+
+/* Pending friend-request count on the Search tab */
+.nav-link {
+  position: relative;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 7px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  background: var(--accent);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  vertical-align: 1px;
+}
+
+/* On the active (orange) tab, invert so it stays visible */
+.nav-link.active .nav-badge {
+  background: var(--ink);
+  color: var(--accent);
+  border-color: var(--ink);
+}

@@ -5,11 +5,68 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px 18px;
   align-items: end;
-  padding: 22px;
+  padding: 20px;
   margin-bottom: 32px;
-  border: 3px solid var(--ink);
+  /* Lighter than the cards it sits above — it's a control strip, not content */
+  border: 2px solid var(--border-soft);
   background: var(--paper-2);
-  box-shadow: var(--shadow-hard);
+}
+
+/* Collapsed-by-default group: skill, dates and times */
+.match-browse .filters-advanced {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px 18px;
+  align-items: end;
+  padding-top: 18px;
+  border-top: 2px solid var(--border-soft);
+}
+
+.match-browse .filters-advanced[hidden] {
+  display: none;
+}
+
+.filters-advanced-toggle {
+  grid-column: 1 / -1;
+}
+
+.filters-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.filters-more:hover {
+  color: var(--accent-ink);
+  border-bottom-color: var(--accent);
+}
+
+/* Black on orange = 6.7:1 */
+.filters-more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  background: var(--accent);
+  color: var(--ink);
+  border: 2px solid var(--ink);
 }
 
 .match-browse .filter {
@@ -60,6 +117,11 @@
   box-shadow: var(--shadow-hard-sm);
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.match-browse .filters-clear {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .match-browse .filters-clear:hover:not(:disabled) {
@@ -230,10 +292,42 @@
 
 .match-roster {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
   line-height: 1.05;
+}
+
+/* Overlapping avatars of who's actually going */
+.roster-faces {
+  display: inline-flex;
+  align-items: center;
+}
+
+.roster-face {
+  width: 28px;
+  height: 28px;
+  margin-left: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--paper);
+  outline: 1px solid var(--ink);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.roster-face:first-child {
+  margin-left: 0;
+}
+
+.roster-face--more {
+  background: var(--paper-2);
+  color: var(--ink);
 }
 
 .match-roster-count {
@@ -247,14 +341,7 @@
   color: #8a8a90;
 }
 
-.match-roster-label {
-  font-size: 9.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #6a6a70;
-  margin-top: 3px;
-}
+
 
 /* Thin fill bar pinned to the bottom edge showing how full the roster is */
 .match-roster-bar {

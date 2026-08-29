@@ -4,7 +4,9 @@ import { fetchMatches } from "../services/matchService";
 import SportIcon from "../components/SportIcon";
 import HostBadge from "../components/HostBadge";
 import { fetchHostsByToken } from "../services/hostService";
-import { fetchParticipantCounts } from "../services/matchService";
+import { fetchParticipants } from "../services/matchService";
+import type { MatchPlayer } from "../services/matchService";
+import { avatarColour, initials } from "../lib/avatar";
 import { sportVars } from "../lib/sportTheme";
 import { getHostToken, type PlayerToken } from "../lib/playerToken";
 import type { Match, MatchHost } from "../types";
@@ -135,7 +137,8 @@ export default function MatchBrowse({
 }: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
-  const [rosters, setRosters] = useState<Map<string, number>>(new Map());
+  const [rosters, setRosters] = useState<Map<string, MatchPlayer[]>>(new Map());
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -175,11 +178,11 @@ export default function MatchBrowse({
     if (matches.length === 0) return;
     let cancelled = false;
 
-    fetchParticipantCounts(matches.map((m) => m.id))
-      .then((counts) => {
-        if (!cancelled) setRosters(counts);
+    fetchParticipants(matches.map((m) => m.id))
+      .then((people) => {
+        if (!cancelled) setRosters(people);
       })
-      .catch((err) => console.error("Failed to load roster counts:", err));
+      .catch((err) => console.error("Failed to load rosters:", err));
 
     return () => {
       cancelled = true;
@@ -307,6 +310,20 @@ export default function MatchBrowse({
     }
   }
 
+  // Active filters living inside the collapsed group — surfaced on the toggle
+  // so a filter is never silently applied out of sight.
+  const advancedCount = useMemo(
+    () =>
+      [
+        filters.skillLevel,
+        filters.dateFrom,
+        filters.dateTo,
+        filters.timeFrom,
+        filters.timeTo,
+      ].filter((v) => v.trim() !== "").length,
+    [filters],
+  );
+
   const hasActiveFilters = useMemo(
     () => Object.values(filters).some((value) => value.trim() !== ""),
     [filters],
@@ -421,6 +438,26 @@ export default function MatchBrowse({
           </select>
         </label>
 
+        <div className="filters-advanced-toggle">
+          <button
+            type="button"
+            className="filters-more"
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-filters"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced ? "Fewer filters" : "More filters"}
+            {!showAdvanced && advancedCount > 0 && (
+              <span className="filters-more-count">{advancedCount}</span>
+            )}
+          </button>
+        </div>
+
+        <div
+          id="advanced-filters"
+          className="filters-advanced"
+          hidden={!showAdvanced}
+        >
         <label className="filter">
           <span>Skill level</span>
           <select
@@ -473,6 +510,8 @@ export default function MatchBrowse({
             onChange={(e) => updateFilter("timeTo", e.target.value)}
           />
         </label>
+
+        </div>
 
         <button
           type="button"
@@ -549,15 +588,41 @@ export default function MatchBrowse({
 
                     <div className="match-card-foot">
                       <HostBadge host={hostFor(match)} size={34} />
-                      <span className="match-roster">
-                        <span className="match-roster-count">
-                          {rosters.get(match.id) ?? 0}
-                          <span className="match-roster-max">
-                            /{match.max_players}
+                      {(() => {
+                        const players = rosters.get(match.id) ?? [];
+                        const shown = players.slice(0, 3);
+                        const extra = players.length - shown.length;
+                        return (
+                          <span className="match-roster">
+                            {players.length > 0 && (
+                              <span className="roster-faces" aria-hidden="true">
+                                {shown.map((p) => (
+                                  <span
+                                    key={p.id}
+                                    className="roster-face"
+                                    style={{ background: avatarColour(p.id) }}
+                                    title={p.name}
+                                  >
+                                    {initials(p.name)}
+                                  </span>
+                                ))}
+                                {extra > 0 && (
+                                  <span className="roster-face roster-face--more">
+                                    +{extra}
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            <span className="match-roster-count">
+                              {players.length}
+                              <span className="match-roster-max">
+                                /{match.max_players}
+                              </span>
+                              <span className="visually-hidden"> players going</span>
+                            </span>
                           </span>
-                        </span>
-                        <span className="match-roster-label">going</span>
-                      </span>
+                        );
+                      })()}
                     </div>
 
                     <span
@@ -568,7 +633,9 @@ export default function MatchBrowse({
                         "--fill": `${Math.min(
                           100,
                           match.max_players > 0
-                            ? ((rosters.get(match.id) ?? 0) / match.max_players) * 100
+                            ? ((rosters.get(match.id)?.length ?? 0) /
+                                match.max_players) *
+                              100
                             : 0,
                         )}%`,
                       } as React.CSSProperties}

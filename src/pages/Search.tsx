@@ -7,6 +7,7 @@ import {
   sendFriendRequest,
 } from "../services/friendService";
 import type { SearchResult } from "../services/friendService";
+import { useFriendRequests } from "../context/FriendRequestsContext";
 import { avatarColour, initials } from "../lib/avatar";
 import "./Search.css";
 
@@ -19,6 +20,9 @@ export default function Search() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  // Shared with the navbar badge so the count and the list stay in step.
+  const { requests, refresh: refreshRequests } = useFriendRequests();
 
   const term = query.trim();
 
@@ -66,6 +70,7 @@ export default function Search() {
       await sendFriendRequest(userId, person.id);
       const refreshed = await findPeople(term, userId);
       setResults(refreshed);
+      await refreshRequests();
     } catch (err) {
       console.error("Failed to send request:", err);
       setError("Couldn't send that request.");
@@ -80,6 +85,7 @@ export default function Search() {
     try {
       await removeFriendship(person.requestId);
       patch(person.id, { status: "none", requestId: undefined });
+      await refreshRequests();
     } catch (err) {
       console.error("Failed to remove request:", err);
       setError("Couldn't update that request.");
@@ -94,9 +100,25 @@ export default function Search() {
     try {
       await acceptFriendRequest(person.requestId);
       patch(person.id, { status: "friends" });
+      await refreshRequests();
     } catch (err) {
       console.error("Failed to accept request:", err);
       setError("Couldn't accept that request.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function respondToRequest(id: string, accepted: boolean) {
+    setBusy(id);
+    try {
+      if (accepted) await acceptFriendRequest(id);
+      else await removeFriendship(id);
+      await refreshRequests();
+      if (userId && term.length >= 2) setResults(await findPeople(term, userId));
+    } catch (err) {
+      console.error("Failed to respond to request:", err);
+      setError("Couldn't update that request.");
     } finally {
       setBusy(null);
     }
@@ -109,6 +131,54 @@ export default function Search() {
       <p className="page-subtitle">
         Look someone up by name, or by their full email address if you know it.
       </p>
+
+      {userId && (
+        <section className="requests-panel" aria-labelledby="requests-title">
+          <h2 id="requests-title" className="requests-title">
+            Friend requests
+            <span className="requests-count">{requests.length}</span>
+          </h2>
+
+          {requests.length === 0 && (
+            <p className="requests-empty">
+              No pending requests. When someone adds you, they'll appear here.
+            </p>
+          )}
+
+          <ul className="search-results" role="list">
+            {requests.map((r) => (
+              <li key={r.id} className="search-result">
+                <span
+                  className="search-avatar"
+                  style={{ background: avatarColour(r.requester.id) }}
+                  aria-hidden="true"
+                >
+                  {initials(r.requester.name)}
+                </span>
+                <span className="search-name">{r.requester.name}</span>
+                <span className="search-action">
+                  <button
+                    type="button"
+                    className="btn-add"
+                    disabled={busy === r.id}
+                    onClick={() => respondToRequest(r.id, true)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-quiet"
+                    disabled={busy === r.id}
+                    onClick={() => respondToRequest(r.id, false)}
+                  >
+                    Decline
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form className="search-form" onSubmit={(e) => e.preventDefault()}>
         <label htmlFor="people-search" className="visually-hidden">

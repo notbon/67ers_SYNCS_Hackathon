@@ -47,32 +47,40 @@ export async function fetchMatches(): Promise<Match[]> {
   return (data ?? []) as Match[];
 }
 
+export type MatchPlayer = { id: string; name: string };
+
 /**
- * How many players have signed up to each of the given matches.
- * Returns a Map keyed by match id; matches with nobody signed up are absent.
+ * Who has signed up to each of the given matches, batched into one round trip.
+ * Returns a Map keyed by match id. Used to show faces on the match cards
+ * rather than just a count — the roster count is this list's length.
  *
- * Roster counts are decorative — a failure resolves to an empty Map so the
- * match list still renders.
+ * Decorative, so a failure resolves to an empty Map and the list still renders.
  */
-export async function fetchParticipantCounts(
+export async function fetchParticipants(
   matchIds: string[],
-): Promise<Map<string, number>> {
-  const counts = new Map<string, number>();
-  if (matchIds.length === 0) return counts;
+): Promise<Map<string, MatchPlayer[]>> {
+  const byMatch = new Map<string, MatchPlayer[]>();
+  if (matchIds.length === 0) return byMatch;
 
   const { data, error } = await supabase
     .from("match_participants")
-    .select("match_id")
+    .select("match_id, user:users ( id, name )")
     .in("match_id", matchIds);
 
   if (error) {
-    console.error("Failed to load roster counts:", error);
-    return counts;
+    console.error("Failed to load rosters:", error);
+    return byMatch;
   }
 
-  ((data ?? []) as { match_id: string }[]).forEach((row) => {
-    counts.set(row.match_id, (counts.get(row.match_id) ?? 0) + 1);
+  type Row = { match_id: string; user: MatchPlayer | MatchPlayer[] | null };
+
+  ((data ?? []) as unknown as Row[]).forEach((row) => {
+    const person = Array.isArray(row.user) ? row.user[0] : row.user;
+    if (!person) return;
+    const list = byMatch.get(row.match_id) ?? [];
+    list.push(person);
+    byMatch.set(row.match_id, list);
   });
 
-  return counts;
+  return byMatch;
 }
