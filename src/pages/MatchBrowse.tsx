@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchMatches } from "../services/matchService";
-import {
-  LOCATION_MATCH_THRESHOLD,
-  locationScore,
-} from "../lib/locationMatch";
 import SportIcon from "../components/SportIcon";
 import type { Match } from "../types";
 import "./MatchBrowse.css";
@@ -63,6 +59,30 @@ function skillLevelMatches(matchSkill: string | null, wanted: string): boolean {
   return matchSkill === wanted;
 }
 
+function distanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371;
+
+  const toRad = (degrees: number) =>
+    (degrees * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+
 function matchesFilters(match: Match, filters: Filters): boolean {
   if (filters.sport && match.sport !== filters.sport) return false;
 
@@ -74,13 +94,6 @@ function matchesFilters(match: Match, filters: Filters): boolean {
   const time = toHhMm(match.match_time);
   if (filters.timeFrom && time < filters.timeFrom) return false;
   if (filters.timeTo && time > filters.timeTo) return false;
-
-  if (
-    filters.location.trim() &&
-    locationScore(match.location, filters.location) < LOCATION_MATCH_THRESHOLD
-  ) {
-    return false;
-  }
 
   return true;
 }
@@ -119,6 +132,12 @@ export default function MatchBrowse({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [searchCoords, setSearchCoords] = useState<{
+  lat: number;
+  lng: number;
+} | null>(null);
+
+  const [radiusKm, setRadiusKm] = useState(5);
   const locationContainerRef = useRef<HTMLDivElement>(null);
 
   const locationAutocompleteRef =
@@ -174,7 +193,7 @@ export default function MatchBrowse({
         const place = event.placePrediction.toPlace();
 
         await place.fetchFields({
-          fields: ["displayName", "formattedAddress"],
+          fields: ["displayName", "formattedAddress", "location"],
         });
 
         const selectedLocation =
@@ -183,6 +202,13 @@ export default function MatchBrowse({
           "";
 
         updateFilter("location", selectedLocation);
+
+        if (place.location) {
+          setSearchCoords({
+            lat: place.location.lat(),
+            lng: place.location.lng(),
+          });
+        }
       }
     );
 
@@ -229,6 +255,8 @@ export default function MatchBrowse({
 
   function clearFilters() {
     setFilters(EMPTY_FILTERS);
+    setSearchCoords(null);
+    setRadiusKm(5);
     onSportChange?.("");
 
     if (locationAutocompleteRef.current) {
@@ -242,27 +270,66 @@ export default function MatchBrowse({
   );
 
   const visibleMatches = useMemo(() => {
-    const locationQuery = filters.location.trim();
+  return matches
+    .map((match) => {
+      let distance: number | null = null;
 
-    return matches
-      .map((match) => ({
+      if (
+        searchCoords &&
+        match.latitude != null &&
+        match.longitude != null
+      ) {
+        distance = distanceKm(
+          searchCoords.lat,
+          searchCoords.lng,
+          match.latitude,
+          match.longitude
+        );
+      }
+
+      return {
         match,
-        locationScore: locationQuery
-          ? locationScore(match.location, locationQuery)
-          : 1,
-      }))
-      .filter(({ match }) => matchesFilters(match, filters))
-      .sort((a, b) => {
-        // When searching by location, closest match first; otherwise soonest.
-        if (locationQuery && b.locationScore !== a.locationScore) {
-          return b.locationScore - a.locationScore;
+        distance,
+      };
+    })
+    .filter(({ match, distance }) => {
+      if (!matchesFilters(match, filters)) {
+        return false;
+      }
+
+      if (searchCoords) {
+        if (distance === null) {
+          return false;
         }
-        if (a.match.match_date !== b.match.match_date) {
-          return a.match.match_date < b.match.match_date ? -1 : 1;
+
+        if (distance > radiusKm) {
+          return false;
         }
-        return toHhMm(a.match.match_time) < toHhMm(b.match.match_time) ? -1 : 1;
-      });
-  }, [matches, filters]);
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (
+        searchCoords &&
+        a.distance !== null &&
+        b.distance !== null
+      ) {
+        return a.distance - b.distance;
+      }
+
+      if (a.match.match_date !== b.match.match_date) {
+        return a.match.match_date < b.match.match_date
+          ? -1
+          : 1;
+      }
+
+      return toHhMm(a.match.match_time) <
+        toHhMm(b.match.match_time)
+        ? -1
+        : 1;
+    });
+}, [matches, filters, searchCoords, radiusKm]);
 
   return (
     <section className="page match-browse" aria-labelledby="browse-title">
@@ -279,7 +346,22 @@ export default function MatchBrowse({
             ref={locationContainerRef}
             className="browse-location-autocomplete"
           />
-        </div>
+          </div>
+          <label className="filter">
+            <span>Radius</span>
+
+            <select
+              value={radiusKm}
+              onChange={(e) => setRadiusKm(Number(e.target.value))}
+            >
+              <option value={1}>Within 1 km</option>
+              <option value={2}>Within 2 km</option>
+              <option value={5}>Within 5 km</option>
+              <option value={10}>Within 10 km</option>
+              <option value={25}>Within 25 km</option>
+              <option value={50}>Within 50 km</option>
+            </select>
+          </label>
 
         <label className="filter">
           <span>Sport</span>
@@ -379,7 +461,7 @@ export default function MatchBrowse({
             </p>
           ) : (
             <ul className="match-list" role="list">
-              {visibleMatches.map(({ match, locationScore: score }, index) => (
+              {visibleMatches.map(({ match, distance }, index) => (
                 <li
                   key={match.id}
                   className="match-item"
@@ -399,10 +481,10 @@ export default function MatchBrowse({
                         <dt>Location</dt>
                         <dd>
                           {match.location}
-                          {filters.location.trim() && score < 0.95 && (
+                         {distance !== null && (
                             <span className="match-card-approx">
                               {" "}
-                              · close match
+                              · {distance.toFixed(1)} km away
                             </span>
                           )}
                         </dd>

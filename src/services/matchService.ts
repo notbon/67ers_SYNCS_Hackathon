@@ -5,6 +5,8 @@ export type CreateMatchInput = {
   title: string;
   sport: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   match_date: string;
   match_time: string;
   max_players: number;

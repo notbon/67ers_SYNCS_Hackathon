@@ -10,6 +10,8 @@ CREATE TABLE matches (
     title TEXT NOT NULL,
     sport TEXT NOT NULL,
     location TEXT NOT NULL,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     match_date DATE NOT NULL,
     match_time TIME NOT NULL,
     max_players INTEGER NOT NULL,
