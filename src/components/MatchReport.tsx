@@ -296,7 +296,12 @@ export default function MatchReport({
               {participants.map((p) => (
                 <li key={p.id} className="attendance-row">
                   <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
-                  <Link to={`/players/${p.id}`}>{p.name}</Link>
+                  <Link
+                    to={`/players/${p.id}`}
+                    className="attendance-name"
+                  >
+                    {p.name}
+                  </Link>
                   <label className="attendance-toggle">
                     <input
                       type="checkbox"
