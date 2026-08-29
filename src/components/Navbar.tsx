@@ -15,7 +15,7 @@ export function Navbar() {
     <header className="navbar">
       <div className="navbar-inner">
         <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
-          🏟️ MatchUp
+          MatchUp
         </NavLink>
 
         <button
