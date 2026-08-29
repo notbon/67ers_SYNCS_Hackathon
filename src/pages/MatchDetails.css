@@ -1,0 +1,190 @@
+.match-details-page {
+  min-height: 100vh;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: flex-start;
+
+  padding: 60px 20px;
+
+  background-color: #f5f6f8;
+}
+
+.match-details-card {
+  width: 100%;
+
+  max-width: 650px;
+
+  background-color: white;
+
+  padding: 36px;
+
+  border-radius: 16px;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.match-details-header {
+  margin-bottom: 30px;
+}
+
+.match-details-header h1 {
+  margin: 6px 0 12px;
+
+  font-size: 32px;
+
+  color: #222;
+}
+
+.match-sport {
+  margin: 0;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  color: #666;
+}
+
+.skill-level {
+  display: inline-block;
+
+  padding: 6px 10px;
+
+  border-radius: 6px;
+
+  background-color: #f0f1f3;
+
+  color: #444;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.match-info {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 16px;
+
+  margin-bottom: 30px;
+}
+
+.match-info-item {
+  display: flex;
+
+  flex-direction: column;
+
+  padding: 16px;
+
+  background-color: #f7f8fa;
+
+  border-radius: 8px;
+
+  color: #222;
+}
+
+.info-label {
+  margin-bottom: 5px;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  color: #777;
+}
+
+.match-description {
+  padding-top: 24px;
+
+  margin-bottom: 28px;
+
+  border-top: 1px solid #e5e5e5;
+}
+
+.match-description h2 {
+  margin: 0 0 10px;
+
+  font-size: 20px;
+
+  color: #222;
+}
+
+.match-description p {
+  margin: 0;
+
+  line-height: 1.6;
+
+  color: #555;
+}
+
+.join-match-button,
+.leave-match-button {
+  width: 100%;
+
+  padding: 14px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  color: white;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.join-match-button {
+  background-color: #222;
+}
+
+.leave-match-button {
+  background-color: #b73737;
+}
+
+.join-match-button:hover,
+.leave-match-button:hover {
+  opacity: 0.9;
+
+  transform: translateY(-1px);
+}
+
+.join-match-button:disabled,
+.leave-match-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+@media (max-width: 600px) {
+  .match-details-page {
+    padding: 30px 16px;
+  }
+
+  .match-details-card {
+    padding: 24px;
+  }
+
+  .match-details-header h1 {
+    font-size: 27px;
+  }
+
+  .match-info {
+    grid-template-columns: 1fr;
+  }
+}

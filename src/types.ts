@@ -14,13 +14,23 @@ export interface Match {
   title: string;
   sport: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   match_date: string; // date, e.g. "2026-09-12"
   match_time: string; // time, e.g. "18:30:00"
   max_players: number;
   skill_level: string | null;
   description: string | null;
   created_by: string | null;
+  host?: MatchHost | null;
 }
+
+export type MatchHost = {
+  id: string;
+  display_name: string | null;
+  avatar_url?: string | null;
+};
+
 
 export interface MatchParticipant {
   match_id: string;

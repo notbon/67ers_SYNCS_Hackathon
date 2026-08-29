@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchMatches } from "../services/matchService";
-import {
-  LOCATION_MATCH_THRESHOLD,
-  locationScore,
-} from "../lib/locationMatch";
 import SportIcon from "../components/SportIcon";
-import type { Match } from "../types";
+import HostBadge from "../components/HostBadge";
+import { fetchHostsByToken } from "../services/hostService";
+import { getHostToken, type PlayerToken } from "../lib/playerToken";
+import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
 
 // Keep these in step with the options offered in CreateMatch.tsx.
@@ -63,6 +62,30 @@ function skillLevelMatches(matchSkill: string | null, wanted: string): boolean {
   return matchSkill === wanted;
 }
 
+function distanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371;
+
+  const toRad = (degrees: number) =>
+    (degrees * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+
 function matchesFilters(match: Match, filters: Filters): boolean {
   if (filters.sport && match.sport !== filters.sport) return false;
 
@@ -74,13 +97,6 @@ function matchesFilters(match: Match, filters: Filters): boolean {
   const time = toHhMm(match.match_time);
   if (filters.timeFrom && time < filters.timeFrom) return false;
   if (filters.timeTo && time > filters.timeTo) return false;
-
-  if (
-    filters.location.trim() &&
-    locationScore(match.location, filters.location) < LOCATION_MATCH_THRESHOLD
-  ) {
-    return false;
-  }
 
   return true;
 }
@@ -116,9 +132,20 @@ export default function MatchBrowse({
   onSportChange,
 }: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [searchCoords, setSearchCoords] = useState<{
+  lat: number;
+  lng: number;
+} | null>(null);
+
+  const [radiusKm, setRadiusKm] = useState(5);
+  const locationContainerRef = useRef<HTMLDivElement>(null);
+
+  const locationAutocompleteRef =
+  useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +167,105 @@ export default function MatchBrowse({
     };
   }, []);
 
+  // Resolve host profiles (photo + name) for the loaded matches in one batch.
+  // Purely decorative, so failures inside fetchHostsByToken degrade to no badge.
+  useEffect(() => {
+    if (matches.length === 0) return;
+
+    let cancelled = false;
+    fetchHostsByToken(matches.map(getHostToken)).then((resolved) => {
+      if (!cancelled) setHosts(resolved);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
+
+  function hostFor(match: Match): MatchHost | null {
+    const token = getHostToken(match);
+    return (token && hosts.get(token)) || match.host || null;
+  }
+
+  useEffect(() => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey) {
+    console.error("Google Maps API key missing");
+    return;
+  }
+
+  async function initAutocomplete() {
+    if (!locationContainerRef.current) return;
+
+    const { PlaceAutocompleteElement } =
+      await google.maps.importLibrary(
+        "places"
+      ) as google.maps.PlacesLibrary;
+
+    const autocomplete = new PlaceAutocompleteElement();
+
+    autocomplete.placeholder = "Search for a location";
+
+    locationAutocompleteRef.current = autocomplete;
+
+    autocomplete.addEventListener(
+      "gmp-select",
+      async (
+        event: google.maps.places.PlacePredictionSelectEvent
+      ) => {
+        const place = event.placePrediction.toPlace();
+
+        await place.fetchFields({
+          fields: ["displayName", "formattedAddress", "location"],
+        });
+
+        const selectedLocation =
+          place.formattedAddress ||
+          place.displayName ||
+          "";
+
+        updateFilter("location", selectedLocation);
+
+        if (place.location) {
+          setSearchCoords({
+            lat: place.location.lat(),
+            lng: place.location.lng(),
+          });
+        }
+      }
+    );
+
+    locationContainerRef.current.innerHTML = "";
+    locationContainerRef.current.appendChild(autocomplete);
+  }
+
+  if (window.google?.maps) {
+    initAutocomplete();
+    return;
+  }
+
+  const existingScript = document.querySelector(
+    'script[src*="maps.googleapis.com/maps/api/js"]'
+  );
+
+  if (existingScript) {
+    existingScript.addEventListener("load", initAutocomplete);
+    return;
+  }
+
+  const script = document.createElement("script");
+
+  script.src =
+    `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+
+  script.async = true;
+  script.defer = true;
+  script.onload = initAutocomplete;
+
+  document.head.appendChild(script);
+}, []);
+
   // Mirror the controlled sport value into the internal filter state.
   useEffect(() => {
     if (sport === undefined) return;
@@ -153,7 +279,13 @@ export default function MatchBrowse({
 
   function clearFilters() {
     setFilters(EMPTY_FILTERS);
+    setSearchCoords(null);
+    setRadiusKm(5);
     onSportChange?.("");
+
+    if (locationAutocompleteRef.current) {
+      locationAutocompleteRef.current.value = "";
+    }
   }
 
   const hasActiveFilters = useMemo(
@@ -162,27 +294,66 @@ export default function MatchBrowse({
   );
 
   const visibleMatches = useMemo(() => {
-    const locationQuery = filters.location.trim();
+  return matches
+    .map((match) => {
+      let distance: number | null = null;
 
-    return matches
-      .map((match) => ({
+      if (
+        searchCoords &&
+        match.latitude != null &&
+        match.longitude != null
+      ) {
+        distance = distanceKm(
+          searchCoords.lat,
+          searchCoords.lng,
+          match.latitude,
+          match.longitude
+        );
+      }
+
+      return {
         match,
-        locationScore: locationQuery
-          ? locationScore(match.location, locationQuery)
-          : 1,
-      }))
-      .filter(({ match }) => matchesFilters(match, filters))
-      .sort((a, b) => {
-        // When searching by location, closest match first; otherwise soonest.
-        if (locationQuery && b.locationScore !== a.locationScore) {
-          return b.locationScore - a.locationScore;
+        distance,
+      };
+    })
+    .filter(({ match, distance }) => {
+      if (!matchesFilters(match, filters)) {
+        return false;
+      }
+
+      if (searchCoords) {
+        if (distance === null) {
+          return false;
         }
-        if (a.match.match_date !== b.match.match_date) {
-          return a.match.match_date < b.match.match_date ? -1 : 1;
+
+        if (distance > radiusKm) {
+          return false;
         }
-        return toHhMm(a.match.match_time) < toHhMm(b.match.match_time) ? -1 : 1;
-      });
-  }, [matches, filters]);
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (
+        searchCoords &&
+        a.distance !== null &&
+        b.distance !== null
+      ) {
+        return a.distance - b.distance;
+      }
+
+      if (a.match.match_date !== b.match.match_date) {
+        return a.match.match_date < b.match.match_date
+          ? -1
+          : 1;
+      }
+
+      return toHhMm(a.match.match_time) <
+        toHhMm(b.match.match_time)
+        ? -1
+        : 1;
+    });
+}, [matches, filters, searchCoords, radiusKm]);
 
   return (
     <section className="page match-browse" aria-labelledby="browse-title">
@@ -192,15 +363,29 @@ export default function MatchBrowse({
       <p className="page-subtitle">Find a game near you and jump in.</p>
 
       <form className="filters" onSubmit={(e) => e.preventDefault()}>
-        <label className="filter filter--wide">
+        <div className="filter filter--wide">
           <span>Location</span>
-          <input
-            type="search"
-            placeholder="e.g. Moore Park, Sydney"
-            value={filters.location}
-            onChange={(e) => updateFilter("location", e.target.value)}
+
+          <div
+            ref={locationContainerRef}
+            className="browse-location-autocomplete"
           />
-        </label>
+          </div>
+          <label className="filter">
+            <span>Radius</span>
+
+            <select
+              value={radiusKm}
+              onChange={(e) => setRadiusKm(Number(e.target.value))}
+            >
+              <option value={1}>Within 1 km</option>
+              <option value={2}>Within 2 km</option>
+              <option value={5}>Within 5 km</option>
+              <option value={10}>Within 10 km</option>
+              <option value={25}>Within 25 km</option>
+              <option value={50}>Within 50 km</option>
+            </select>
+          </label>
 
         <label className="filter">
           <span>Sport</span>
@@ -300,7 +485,7 @@ export default function MatchBrowse({
             </p>
           ) : (
             <ul className="match-list" role="list">
-              {visibleMatches.map(({ match, locationScore: score }, index) => (
+              {visibleMatches.map(({ match, distance }, index) => (
                 <li
                   key={match.id}
                   className="match-item"
@@ -320,10 +505,10 @@ export default function MatchBrowse({
                         <dt>Location</dt>
                         <dd>
                           {match.location}
-                          {filters.location.trim() && score < 0.95 && (
+                         {distance !== null && (
                             <span className="match-card-approx">
                               {" "}
-                              · close match
+                              · {distance.toFixed(1)} km away
                             </span>
                           )}
                         </dd>
@@ -344,6 +529,10 @@ export default function MatchBrowse({
                         <dd>up to {match.max_players}</dd>
                       </div>
                     </dl>
+
+                    <div className="match-card-foot">
+                      <HostBadge host={hostFor(match)} />
+                    </div>
                   </Link>
                 </li>
               ))}

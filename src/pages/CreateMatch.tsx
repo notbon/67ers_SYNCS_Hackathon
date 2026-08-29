@@ -12,6 +12,9 @@ function CreateMatch() {
   const [skillLevel, setSkillLevel] = useState("");
   const [description, setDescription] = useState("");
 
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
   const locationRef = useRef<HTMLDivElement>(null);
   const autocompleteElementRef =
   useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
@@ -42,7 +45,7 @@ async function initAutocomplete() {
       const place = event.placePrediction.toPlace();
 
       await place.fetchFields({
-        fields: ["displayName", "formattedAddress"],
+        fields: ["displayName", "formattedAddress", "location"],
       });
 
       const selectedLocation =
@@ -51,6 +54,10 @@ async function initAutocomplete() {
         "";
 
       setLocation(selectedLocation);
+      if (place.location) {
+        setLatitude(place.location.lat());
+        setLongitude(place.location.lng());
+      }
     }
   );
 
@@ -80,18 +87,25 @@ async function initAutocomplete() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (latitude === null || longitude === null) {
+      alert("Please select a location from the Google suggestions.");
+      return;
+    }
+
     try {
-  const data = await createMatch({
-    title,
-    sport,
-    location,
-    match_date: matchDate,
-    match_time: matchTime,
-    max_players: Number(maxPlayers),
-    skill_level: skillLevel,
-    description,
-    created_by: null,
-  });
+      const data = await createMatch({
+        title,
+        sport,
+        location,
+        latitude,
+        longitude,
+        match_date: matchDate,
+        match_time: matchTime,
+        max_players: Number(maxPlayers),
+        skill_level: skillLevel,
+        description,
+        created_by: null,
+      });
 
   console.log("Created match:", data);
   alert("Match created!");
@@ -99,6 +113,8 @@ async function initAutocomplete() {
   setTitle("");
   setSport("");
   setLocation("");
+  setLatitude(null);
+  setLongitude(null);
   setMatchDate("");
   setMatchTime("");
   setMaxPlayers("");
