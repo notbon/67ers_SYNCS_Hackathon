@@ -5,6 +5,7 @@ import './Navbar.css';
 const LINKS = [
   { to: '/', label: 'Browse', end: true },
   { to: '/create', label: 'Create' },
+  { to: '/search', label: 'Search' },
   { to: '/profile', label: 'Profile' },
 ];
 
