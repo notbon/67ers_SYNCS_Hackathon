@@ -84,3 +84,144 @@ export async function fetchParticipants(
 
   return byMatch;
 }
+
+export type AttendanceMap = Record<string, boolean>; // user_id -> attended
+
+export async function fetchAttendance(matchId: string): Promise<AttendanceMap> {
+  const { data, error } = await supabase
+    .from("match_attendance")
+    .select("user_id, attended")
+    .eq("match_id", matchId);
+  if (error) throw error;
+  const map: AttendanceMap = {};
+  (data ?? []).forEach((row) => { map[row.user_id] = row.attended; });
+  return map;
+}
+
+export async function setAttendance(
+  matchId: string,
+  userId: string,
+  attended: boolean,
+  markedBy: string
+) {
+  const { error } = await supabase.from("match_attendance").upsert({
+    match_id: matchId,
+    user_id: userId,
+    attended,
+    marked_by: markedBy,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export type MatchScore = { team_a_score: number | null; team_b_score: number | null };
+
+export async function fetchScore(matchId: string): Promise<MatchScore | null> {
+  const { data, error } = await supabase
+    .from("match_scores")
+    .select("team_a_score, team_b_score")
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function saveScore(
+  matchId: string,
+  teamAScore: number,
+  teamBScore: number,
+  setBy: string
+) {
+  const { error } = await supabase.from("match_scores").upsert({
+    match_id: matchId,
+    team_a_score: teamAScore,
+    team_b_score: teamBScore,
+    set_by: setBy,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export const ENDORSEMENT_BADGES = [
+  "MVP",
+  "Good Sport",
+  "Team Player",
+  "Most Improved",
+  "Great Communication",
+] as const;
+export type EndorsementBadge = (typeof ENDORSEMENT_BADGES)[number];
+
+export type Endorsement = {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  badge: string;
+};
+
+export async function fetchEndorsements(matchId: string): Promise<Endorsement[]> {
+  const { data, error } = await supabase
+    .from("match_endorsements")
+    .select("id, from_user_id, to_user_id, badge")
+    .eq("match_id", matchId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addEndorsement(
+  matchId: string,
+  fromUserId: string,
+  toUserId: string,
+  badge: string
+) {
+  const { error } = await supabase.from("match_endorsements").insert({
+    match_id: matchId,
+    from_user_id: fromUserId,
+    to_user_id: toUserId,
+    badge,
+  });
+  // 23505 = duplicate endorsement (same badge, same pair) — ignore, don't throw.
+  if (error && error.code !== "23505") throw error;
+}
+
+export type Feedback = {
+  id: string;
+  user_id: string;
+  comment: string | null;
+  created_at: string;
+};
+
+export async function fetchFeedback(matchId: string): Promise<Feedback[]> {
+  const { data, error } = await supabase
+    .from("match_feedback")
+    .select("id, user_id, comment, created_at")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function submitFeedback(matchId: string, userId: string, comment: string) {
+  const { error } = await supabase
+    .from("match_feedback")
+    .upsert(
+      { match_id: matchId, user_id: userId, comment },
+      { onConflict: "match_id,user_id" }
+    );
+  if (error) throw error;
+}
+
+export async function fetchBadgeCounts(userId: string): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from("match_endorsements")
+    .select("badge")
+    .eq("to_user_id", userId);
+
+  if (error) throw error;
+
+  const counts: Record<string, number> = {};
+  (data ?? []).forEach((row) => {
+    counts[row.badge] = (counts[row.badge] ?? 0) + 1;
+  });
+  return counts;
+}
+

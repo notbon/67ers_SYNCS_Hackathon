@@ -2,13 +2,13 @@
 // Import these instead of redefining shapes in individual pages so everyone
 // stays in sync with the database schema.
 
-export interface Profile {
+export type Profile = {
   id: string;
   name: string;
   email: string;
   skill_level: string | null;
-  avatar_url?: string | null;
-}
+  avatar_url: string | null;
+};
 
 export interface Match {
   id: string;

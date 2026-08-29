@@ -1,8 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
@@ -10,6 +6,7 @@ import {
   type MatchPlayer,
 } from "../services/matchService";
 import Avatar from "../components/Avatar";
+import MatchReport from "../components/MatchReport";
 import "./MatchDetails.css";
 
 type Match = {
@@ -39,9 +36,10 @@ export default function MatchDetails() {
   const [currentUserId, setCurrentUserId] =
     useState<string | null>(null);
 
-  const [joinStatus, setJoinStatus] = useState<
-    "pending" | "approved" | null
+    const [joinStatus, setJoinStatus] = useState<
+  "pending" | "approved" | null
   >(null);
+
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] =
@@ -55,7 +53,7 @@ export default function MatchDetails() {
    *
    * fetchParticipants() returns:
    *
-   * Map<
+   * Map
    *   match_id,
    *   MatchPlayer[]
    * >
@@ -493,6 +491,15 @@ export default function MatchDetails() {
           </p>
 
         </div>
+
+        {new Date(match.match_date) < new Date() && (
+          <MatchReport
+            matchId={match.id}
+            isHost={match.created_by === currentUserId}
+            currentUserId={currentUserId}
+            participants={participants}
+          />
+        )}
 
         {joinStatus === "pending" && (
           <div className="pending-message">

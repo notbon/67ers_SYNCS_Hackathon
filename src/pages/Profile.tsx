@@ -9,7 +9,6 @@ import {
   fetchCreatedMatches,
   fetchJoinedMatches,
   deleteAccount,
-  uploadAvatar,
 } from "../services/profileService";
 import type { Profile as ProfileType, Match } from "../types";
 import "./Profile.css";
@@ -42,102 +41,6 @@ function MatchList({ matches, emptyText, emptyLinkTo, emptyLinkText }: {
   );
 }
 
-function formatMatchDate(date: string): string {
-  const parsed = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return date;
-  return parsed.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatMatchTime(time: string): string {
-  const hhmm = (time ?? "").slice(0, 5);
-  const parsed = new Date(`2000-01-01T${hhmm}:00`);
-  if (Number.isNaN(parsed.getTime())) return hhmm;
-  return parsed.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-// Interactive version of MatchList for the matches the signed-in user hosts:
-// each row expands in place to show the full details, and links through to the
-// match page.
-function HostedMatchList({ matches }: { matches: Match[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  if (matches.length === 0) {
-    return (
-      <p className="profile-empty">
-        You aren't hosting any matches yet. <Link to="/create">Create one</Link>.
-      </p>
-    );
-  }
-
-  return (
-    <ul className="profile-hosted-list">
-      {matches.map((m) => {
-        const open = expandedId === m.id;
-        const panelId = `hosted-match-${m.id}`;
-
-        return (
-          <li key={m.id} className="profile-hosted-item">
-            <button
-              type="button"
-              className="profile-hosted-summary"
-              aria-expanded={open}
-              aria-controls={panelId}
-              onClick={() => setExpandedId(open ? null : m.id)}
-            >
-              <span className="profile-hosted-heading">
-                <span className="profile-hosted-title">{m.title}</span>
-                <span className="profile-hosted-meta">{m.sport} · {m.location}</span>
-              </span>
-              <span
-                className={`profile-hosted-chevron${open ? " is-open" : ""}`}
-                aria-hidden="true"
-              >
-                ▾
-              </span>
-            </button>
-
-            {open && (
-              <div className="profile-hosted-detail" id={panelId}>
-                <dl className="profile-hosted-facts">
-                  <div>
-                    <dt>Date</dt>
-                    <dd>{formatMatchDate(m.match_date)}</dd>
-                  </div>
-                  <div>
-                    <dt>Time</dt>
-                    <dd>{formatMatchTime(m.match_time)}</dd>
-                  </div>
-                  <div>
-                    <dt>Skill level</dt>
-                    <dd>{m.skill_level ?? "All Levels"}</dd>
-                  </div>
-                  <div>
-                    <dt>Max players</dt>
-                    <dd>{m.max_players}</dd>
-                  </div>
-                </dl>
-
-                {m.description && (
-                  <p className="profile-hosted-description">{m.description}</p>
-                )}
-
-                <Link to={`/matches/${m.id}`} className="profile-hosted-open">
-                  Open match page →
-                </Link>
-              </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 export default function Profile() {
   const { session } = useAuth();
   const userId = session?.user?.id;
@@ -149,9 +52,6 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const [createdMatches, setCreatedMatches] = useState<Match[]>([]);
   const [joinedMatches, setJoinedMatches] = useState<Match[]>([]);
@@ -213,22 +113,6 @@ export default function Profile() {
     }
   }
 
-  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!userId || !e.target.files?.[0]) return;
-    const file = e.target.files[0];
-    setAvatarUploading(true);
-    setAvatarError(null);
-    try {
-      const url = await uploadAvatar(userId, file);
-      const updated = await updateProfile(userId, { avatar_url: url });
-      if (updated) setProfile(updated);
-    } catch (err) {
-      setAvatarError((err as Error).message);
-    } finally {
-      setAvatarUploading(false);
-    }
-  }
-
   async function handleDeleteAccount() {
     if (!userId) return;
     setDeleting(true);
@@ -263,62 +147,46 @@ export default function Profile() {
         {profileLoading ? (
           <p>Loading profile...</p>
         ) : (
-          <>
-            <div className="profile-avatar-block">
-              <img
-                src={profile?.avatar_url || "/default-avatar.png"}
-                alt="Profile"
-                className="profile-avatar"
-              />
-              <label className="profile-link-button">
-                {avatarUploading ? "Uploading..." : "Change Photo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  disabled={avatarUploading}
-                  style={{ display: "none" }}
-                />
-              </label>
-              {avatarError && <p className="profile-error">{avatarError}</p>}
-            </div>
+          <form onSubmit={handleProfileSubmit} className="profile-form">
+            <label className="profile-field">
+              <span>Name</span>
+              <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </label>
 
-            <form onSubmit={handleProfileSubmit} className="profile-form">
-              <label className="profile-field">
-                <span>Name</span>
-                <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
-              </label>
+            <label className="profile-field">
+              <span>Email</span>
+              <input value={session?.user.email ?? ""} disabled />
+            </label>
 
-              <label className="profile-field">
-                <span>Email</span>
-                <input value={session?.user.email ?? ""} disabled />
-              </label>
+            <label className="profile-field">
+              <span>Skill Level</span>
+              <select value={editSkillLevel} onChange={(e) => setEditSkillLevel(e.target.value)}>
+                <option value="">Not set</option>
+                {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+              </select>
+            </label>
 
-              <label className="profile-field">
-                <span>Skill Level</span>
-                <select value={editSkillLevel} onChange={(e) => setEditSkillLevel(e.target.value)}>
-                  <option value="">Not set</option>
-                  {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
-                </select>
-              </label>
+            {profileError && <p className="profile-error">{profileError}</p>}
+            {saveSuccess && !profileError && <p className="profile-notice">Saved!</p>}
 
-              {profileError && <p className="profile-error">{profileError}</p>}
-              {saveSuccess && !profileError && <p className="profile-notice">Saved!</p>}
-
-              <button type="submit" className="profile-button" disabled={savingProfile}>
-                {savingProfile ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
-          </>
+            <button type="submit" className="profile-button" disabled={savingProfile}>
+              {savingProfile ? "Saving..." : "Save Changes"}
+            </button>
+          </form>
         )}
       </div>
 
       <div className="profile-card">
-        <h2>Matches You're Hosting</h2>
+        <h2>Matches You Created</h2>
         {matchesLoading ? (
           <p>Loading...</p>
         ) : (
-          <HostedMatchList matches={createdMatches} />
+          <MatchList
+            matches={createdMatches}
+            emptyText="You haven't created any matches yet."
+            emptyLinkTo="/create"
+            emptyLinkText="Create one"
+          />
         )}
       </div>
 

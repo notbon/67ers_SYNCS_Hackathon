@@ -1,0 +1,339 @@
+.match-report {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .match-report h2 {
+    margin: 0 0 20px;
+  }
+  
+  .match-report-loading {
+    color: var(--text);
+    margin-top: 24px;
+  }
+  
+  .report-section {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  
+  .report-section h3 {
+    margin: 0 0 14px;
+    font-size: 16px;
+  }
+  
+  .report-empty {
+    color: var(--text);
+    margin: 0;
+    font-size: 14px;
+  }
+  
+  /* Score */
+  
+  .score-editor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .score-editor input {
+    width: 80px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 15px;
+    text-align: center;
+    outline: none;
+  }
+  
+  .score-editor input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  
+  .score-sep {
+    font-weight: 700;
+    color: var(--text);
+  }
+  
+  .score-editor button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .score-editor button:hover {
+    opacity: 0.9;
+  }
+  
+  .score-editor button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .score-display {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-h);
+    margin: 0;
+  }
+  
+  /* Attendance */
+  
+  .attendance-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .attendance-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .attendance-row span {
+    flex: 1;
+    color: var(--text-h);
+    font-size: 14px;
+  }
+  
+  .attendance-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  
+  .attendance-toggle input {
+    cursor: pointer;
+  }
+  
+  .attendance-list--readonly .attendance-row span:last-child {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  
+  .attended-yes {
+    color: var(--accent);
+  }
+  
+  .attended-no {
+    color: var(--text);
+  }
+  
+  /* Endorsements */
+  
+  .endorse-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  
+  .endorse-form select {
+    flex: 1;
+    min-width: 140px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+  
+  .endorse-form select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  
+  .endorse-form button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .endorse-form button:hover {
+    opacity: 0.9;
+  }
+  
+  .endorse-form button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .endorsement-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .endorsement-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .endorsement-name {
+    font-weight: 600;
+    color: var(--text-h);
+    font-size: 14px;
+    min-width: 100px;
+  }
+  
+  .endorsement-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  
+  .badge-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  /* Feedback */
+  
+  .feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .feedback-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+  }
+  
+  .feedback-form textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  
+  .feedback-form button {
+    align-self: flex-start;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .feedback-form button:hover {
+    opacity: 0.9;
+  }
+  
+  .feedback-form button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .feedback-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .feedback-row {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  
+  .feedback-row:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  .feedback-author {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-h);
+  }
+  
+  .feedback-row p {
+    margin: 4px 0 0;
+    color: var(--text);
+    font-size: 14px;
+  }
+  
+  @media (max-width: 600px) {
+    .report-section {
+      padding: 16px;
+    }
+  
+    .score-editor {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .score-editor button {
+      width: 100%;
+    }
+  }
+
+  .report-error {
+    color: #d13c3c;
+    font-size: 13px;
+    margin: 8px 0 0;
+  }
+  
+  .report-success {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    margin: 8px 0 0;
+  }
