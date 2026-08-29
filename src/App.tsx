@@ -4,25 +4,35 @@ import Home from './pages/Home';
 import CreateMatch from './pages/CreateMatch';
 import MatchDetails from './pages/MatchDetails';
 import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
+import Splash from './pages/Splash';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
-// Route map for the whole app. Person 1-4: your page component already
-// exists in src/pages — just fill it in. You shouldn't need to touch this
-// file unless you're adding a brand new route.
+function AppRoutes() {
+  const { session, loading } = useAuth();
+
+  if (loading) return <div className="app-loading">Loading...</div>;
+  if (!session) return <Splash />;
+
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/create" element={<CreateMatch />} />
+        <Route path="/matches/:id" element={<MatchDetails />} />
+        <Route path="/profile" element={<Profile />} />
+      </Route>
+    </Routes>
+  );
+}
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/create" element={<CreateMatch />} />
-          <Route path="/matches/:id" element={<MatchDetails />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

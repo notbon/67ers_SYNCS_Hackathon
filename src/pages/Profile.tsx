@@ -1,101 +1,127 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
-import { signIn, signOut, signUp } from "../services/profileService";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  fetchProfile,
+  updateProfile,
+  signOut,
+  fetchCreatedMatches,
+  fetchJoinedMatches,
+} from "../services/profileService";
+import type { Profile as ProfileType, Match } from "../types";
+import "./Profile.css";
+
+const SKILL_LEVELS = ["Beginner", "Casual", "Intermediate", "Advanced", "All Levels"];
 
 export default function Profile() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const { session } = useAuth();
+  const userId = session?.user?.id;
 
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
-  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [editName, setEditName] = useState("");
+  const [editSkillLevel, setEditSkillLevel] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  const [createdMatches, setCreatedMatches] = useState<Match[]>([]);
+  const [joinedMatches, setJoinedMatches] = useState<Match[]>([]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setCheckingSession(false);
-    });
+    if (!userId) return;
+    let cancelled = false;
+    setProfileLoading(true);
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-    });
+    fetchProfile(userId)
+      .then((data) => {
+        if (cancelled) return;
+        setProfile(data);
+        setEditName(data?.name ?? "");
+        setEditSkillLevel(data?.skill_level ?? "");
+      })
+      .catch((err) => setProfileError((err as Error).message))
+      .finally(() => { if (!cancelled) setProfileLoading(false); });
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => { cancelled = true; };
+  }, [userId]);
 
-  async function handleAuthSubmit(e: FormEvent) {
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    Promise.all([fetchCreatedMatches(userId), fetchJoinedMatches(userId)])
+      .then(([created, joined]) => {
+        if (cancelled) return;
+        setCreatedMatches(created);
+        setJoinedMatches(joined);
+      })
+      .catch((err) => console.error(err));
+
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  async function handleProfileSubmit(e: FormEvent) {
     e.preventDefault();
-    setAuthError(null);
-    setAuthNotice(null);
-    setAuthSubmitting(true);
-
+    if (!userId) return;
+    setSavingProfile(true);
+    setProfileError(null);
     try {
-      if (authMode === "signup") {
-        const data = await signUp({ name, email, password });
-        if (!data.session) {
-          setAuthNotice("Account created! Check your email to confirm, then log in.");
-          setAuthMode("login");
-        }
-      } else {
-        await signIn({ email, password });
-      }
-      setPassword("");
+      const updated = await updateProfile(userId, { name: editName, skill_level: editSkillLevel || null });
+      if (updated) setProfile(updated);
     } catch (err) {
-      setAuthError((err as Error).message);
+      setProfileError((err as Error).message);
     } finally {
-      setAuthSubmitting(false);
+      setSavingProfile(false);
     }
   }
 
-  if (checkingSession) {
-    return (
-      <section className="page">
-        <h1>Your Profile</h1>
-        <p className="page-subtitle">Loading...</p>
-      </section>
-    );
-  }
-
-  if (!session) {
-    return (
-      <section className="page">
-        <h1>Your Profile</h1>
-        <p className="page-subtitle">Sign up or log in to continue.</p>
-
-        <div>
-          <button type="button" onClick={() => setAuthMode("login")}>Log In</button>
-          <button type="button" onClick={() => setAuthMode("signup")}>Sign Up</button>
-
-          <form onSubmit={handleAuthSubmit}>
-            {authMode === "signup" && (
-              <input required placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-            )}
-            <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input required type="password" minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-
-            {authError && <p style={{ color: "red" }}>{authError}</p>}
-            {authNotice && <p>{authNotice}</p>}
-
-            <button type="submit" disabled={authSubmitting}>
-              {authSubmitting ? "Please wait..." : authMode === "signup" ? "Create Account" : "Log In"}
-            </button>
-          </form>
-        </div>
-      </section>
-    );
-  }
+  if (!userId) return null; // App.tsx already gates this behind auth
 
   return (
     <section className="page">
-      <h1>Your Profile</h1>
-      <p>Logged in as {session.user.email}</p>
-      <button type="button" onClick={() => signOut()}>Sign Out</button>
+      <h1>{profile?.name ? `Hi, ${profile.name}` : "Your Profile"}</h1>
+      <button type="button" className="profile-link-button" onClick={() => signOut()}>Sign Out</button>
+
+      {profileLoading ? (
+        <p>Loading profile...</p>
+      ) : (
+        <form onSubmit={handleProfileSubmit} className="profile-form">
+          <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <input value={session?.user.email ?? ""} disabled />
+          <select value={editSkillLevel} onChange={(e) => setEditSkillLevel(e.target.value)}>
+            <option value="">Not set</option>
+            {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+          </select>
+
+          {profileError && <p className="profile-error">{profileError}</p>}
+          <button type="submit" className="profile-button" disabled={savingProfile}>
+            {savingProfile ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
+      )}
+
+      <h2>Matches You Created</h2>
+      {createdMatches.length === 0 ? (
+        <p>You haven't created any matches yet. <Link to="/create">Create one</Link>.</p>
+      ) : (
+        createdMatches.map((m) => (
+          <Link key={m.id} to={`/matches/${m.id}`}>
+            <p>{m.title} — {m.sport} @ {m.location}</p>
+          </Link>
+        ))
+      )}
+
+      <h2>Matches You've Joined</h2>
+      {joinedMatches.length === 0 ? (
+        <p>You haven't joined any matches yet. <Link to="/">Browse matches</Link>.</p>
+      ) : (
+        joinedMatches.map((m) => (
+          <Link key={m.id} to={`/matches/${m.id}`}>
+            <p>{m.title} — {m.sport} @ {m.location}</p>
+          </Link>
+        ))
+      )}
     </section>
   );
 }
