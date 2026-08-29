@@ -1,20 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-import { updateMatch, type UpdateMatchInput } from "../services/matchService";
-import type { Match } from "../types";
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
   fetchParticipants,
+  updateMatch,
   type MatchPlayer,
+  type UpdateMatchInput,
 } from "../services/matchService";
 import Avatar from "../components/Avatar";
+import type { Match } from "../types";
 import "./MatchDetails.css";
 
 const SKILL_LEVELS = [
@@ -114,6 +109,12 @@ export default function MatchDetails() {
   );
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(
+    null,
+  );
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Host-only editing
   const [menuOpen, setMenuOpen] = useState(false);
@@ -126,6 +127,20 @@ export default function MatchDetails() {
   const isHost =
     !!match && !!currentUserId && match.created_by === currentUserId;
 
+  // Same roster system as MatchBrowse: fetchParticipants returns
+  // Map<match_id, MatchPlayer[]>.
+  const loadParticipants = useCallback(async (matchId: string) => {
+    try {
+      const rosters = await fetchParticipants([matchId]);
+      const players = rosters.get(matchId) ?? [];
+      setParticipants(players);
+      setParticipantCount(players.length);
+    } catch (error) {
+      console.error("Failed to load match roster:", error);
+      setParticipants([]);
+    }
+  }, []);
+
   useEffect(() => {
     async function loadMatch() {
       if (!id) {
@@ -135,13 +150,8 @@ export default function MatchDetails() {
       try {
         setLoading(true);
 
-        /*
-         * Load match information.
-         */
-        const {
-          data: matchData,
-          error: matchError,
-        } = await supabase
+        // Load match information.
+        const { data: matchData, error: matchError } = await supabase
           .from("matches")
           .select("*")
           .eq("id", id)
@@ -153,33 +163,19 @@ export default function MatchDetails() {
 
         setMatch(matchData);
 
-        /*
-         * Get logged-in user.
-         */
+        // Get logged-in user.
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         setCurrentUserId(user?.id ?? null);
-        setCurrentUserId(
-          user?.id ?? null
-        );
 
-        /*
-         * Load roster using the same system
-         * as MatchBrowse.
-         */
+        // Load the roster.
         await loadParticipants(id);
 
         if (user) {
-          /*
-           * Check whether current user is
-           * pending or approved.
-           */
-          const {
-            data: participant,
-            error: participantError,
-          } = await supabase
+          // Whether the current user is pending or approved for this match.
+          const { data: participant, error: participantError } = await supabase
             .from("match_participants")
             .select("status")
             .eq("match_id", id)
@@ -187,47 +183,29 @@ export default function MatchDetails() {
             .maybeSingle();
 
           if (participantError) {
-            console.error(
-              "Failed to load join status:",
-              participantError
-            );
+            console.error("Failed to load join status:", participantError);
           }
 
           setJoinStatus(
             participant?.status === "pending" ||
-              participant?.status ===
-                "approved"
+              participant?.status === "approved"
               ? participant.status
-              : null
+              : null,
           );
 
-          /*
-           * Get games played for Advanced
-           * match requirements.
-           */
-          const {
-            data: stats,
-            error: statsError,
-          } = await supabase
+          // Games played, for Advanced-match approval requirements.
+          const { data: stats, error: statsError } = await supabase
             .from("user_sport_stats")
             .select("games_played")
             .eq("user_id", user.id)
-            .eq(
-              "sport",
-              matchData.sport
-            )
+            .eq("sport", matchData.sport)
             .maybeSingle();
 
           if (statsError) {
-            console.error(
-              "Failed to load sport stats:",
-              statsError
-            );
+            console.error("Failed to load sport stats:", statsError);
           }
 
-          setGamesPlayed(
-            stats?.games_played ?? 0
-          );
+          setGamesPlayed(stats?.games_played ?? 0);
 
           // If the current user is the host, get pending join requests
           if (matchData.created_by === user.id) {
@@ -267,10 +245,7 @@ export default function MatchDetails() {
           }
         }
       } catch (error) {
-        console.error(
-          "Error loading match:",
-          error
-        );
+        console.error("Error loading match:", error);
       } finally {
         setLoading(false);
       }
@@ -318,7 +293,7 @@ export default function MatchDetails() {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!id || !match || !form || !currentUserId) return;
 
@@ -347,9 +322,7 @@ export default function MatchDetails() {
       setForm(null);
     } catch (error) {
       console.error("Error updating match:", error);
-      setEditError(
-        "Could not save changes. Only the host can edit this match.",
-      );
+      setEditError("Could not save changes. Only the host can edit this match.");
     } finally {
       setSaving(false);
     }
@@ -365,36 +338,21 @@ export default function MatchDetails() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert(
-        "You need to log in before joining a match."
-      );
-
+      alert("You need to log in before joining a match.");
       return;
     }
 
-    if (
-      participantCount >=
-      match.max_players
-    ) {
-      alert(
-        "This match is already full."
-      );
-
+    if (participantCount >= match.max_players) {
+      alert("This match is already full.");
       return;
     }
 
     try {
       setActionLoading(true);
 
-      /*
-       * Advanced matches require approval
-       * if the player has fewer than
-       * five games.
-       */
+      // Advanced matches need approval when the player has fewer than 5 games.
       const status =
-        match.skill_level ===
-          "Advanced" &&
-        gamesPlayed < 5
+        match.skill_level === "Advanced" && gamesPlayed < 5
           ? "pending"
           : "approved";
 
@@ -417,22 +375,13 @@ export default function MatchDetails() {
 
       setJoinStatus(status);
 
-      /*
-       * If they were approved immediately,
-       * refresh the roster so they appear.
-       */
+      // If approved immediately, refresh the roster so they appear.
       if (status === "approved") {
         await loadParticipants(id);
       }
     } catch (error) {
-      console.error(
-        "Error joining match:",
-        error
-      );
-
-      alert(
-        "Could not join match."
-      );
+      console.error("Error joining match:", error);
+      alert("Could not join match.");
     } finally {
       setActionLoading(false);
     }
@@ -539,21 +488,10 @@ async function handleReject(userId: string) {
       }
 
       setJoinStatus(null);
-
-      /*
-       * Reload the exact roster after
-       * removing this player.
-       */
       await loadParticipants(id);
     } catch (error) {
-      console.error(
-        "Error leaving match:",
-        error
-      );
-
-      alert(
-        "Could not leave match."
-      );
+      console.error("Error leaving match:", error);
+      alert("Could not leave match.");
     } finally {
       setActionLoading(false);
     }
@@ -574,18 +512,13 @@ async function handleReject(userId: string) {
       <div className="match-details-page">
         <div className="match-details-card">
           <h1>Match not found</h1>
-
-          <p>
-            This match may have been removed.
-          </p>
+          <p>This match may have been removed.</p>
         </div>
       </div>
     );
   }
 
-  const matchFull =
-    participantCount >=
-    match.max_players;
+  const matchFull = participantCount >= match.max_players;
 
   return (
     <div className="match-details-page">
@@ -754,19 +687,69 @@ async function handleReject(userId: string) {
               </div>
             </div>
 
+            {/* PLAYER ROSTER */}
+            <div className="match-participants">
+              <div className="participants-heading">
+                <h2>Players Joined</h2>
+                <span className="participants-count">
+                  {participantCount} / {match.max_players}
+                </span>
+              </div>
+
+              {participants.length === 0 ? (
+                <p className="participants-empty">No players have joined yet.</p>
+              ) : (
+                <div className="participant-list">
+                  {participants.map((player) => (
+                    <div key={player.id} className="participant-card">
+                      <Avatar
+                        id={player.id}
+                        name={player.name}
+                        url={player.avatar_url}
+                        size={50}
+                        className="participant-avatar-image"
+                      />
+
+                      <div className="participant-details">
+                        <div className="participant-name">
+                          <span>{player.name || "Player"}</span>
+                          {player.id === currentUserId && (
+                            <span className="you-label">You</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="match-description">
               <h2>About this match</h2>
-
               <p>{match.description || "No description has been provided."}</p>
             </div>
 
-            {joined ? (
+            {joinStatus === "pending" && (
+              <div className="pending-message">
+                Your request is waiting for approval.
+              </div>
+            )}
+
+            {joinStatus === "approved" ? (
               <button
                 className="leave-match-button"
                 onClick={handleLeave}
                 disabled={actionLoading}
               >
                 {actionLoading ? "Leaving..." : "Leave Match"}
+              </button>
+            ) : joinStatus === "pending" ? (
+              <button
+                className="leave-match-button"
+                onClick={handleLeave}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Cancelling..." : "Cancel Request"}
               </button>
             ) : (
               <button
@@ -778,7 +761,9 @@ async function handleReject(userId: string) {
                   ? "Match Full"
                   : actionLoading
                     ? "Joining..."
-                    : "Join Match"}
+                    : match.skill_level === "Advanced" && gamesPlayed < 5
+                      ? "Request to Join"
+                      : "Join Match"}
               </button>
             )}
           </>
@@ -1018,7 +1003,6 @@ async function handleReject(userId: string) {
                   : "Join Match"}
           </button>
         )}
-
       </div>
     </div>
   );
