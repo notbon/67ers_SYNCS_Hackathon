@@ -14,6 +14,41 @@
   overflow: hidden;
 }
 
+/* Sydney Harbour map behind the hero copy */
+.hero-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Darkens the map so headline and body copy keep their contrast. Heaviest on
+   the left where the text sits, letting the harbour show through on the right. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(10, 10, 10, 0.94) 0%,
+      rgba(10, 10, 10, 0.86) 40%,
+      rgba(10, 10, 10, 0.3) 74%,
+      rgba(10, 10, 10, 0.1) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 10, 0.55) 0%,
+      rgba(10, 10, 10, 0.15) 45%,
+      rgba(10, 10, 10, 0.4) 100%
+    );
+}
+
 /* Decorative orange corner block, drifts slowly */
 .hero::after {
   content: '';
@@ -27,6 +62,7 @@
   opacity: 0.9;
   pointer-events: none;
   animation: heroBlock 14s ease-in-out infinite;
+  z-index: 1;
 }
 
 @keyframes heroBlock {
@@ -36,7 +72,7 @@
 
 .hero-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 900px;
 }
 
@@ -237,6 +273,15 @@
     bottom: -55px;
   }
 
+  .hero-scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(10, 10, 10, 0.88) 0%,
+      rgba(10, 10, 10, 0.8) 50%,
+      rgba(10, 10, 10, 0.92) 100%
+    );
+  }
+
   .sport-band-inner {
     align-items: flex-start;
   }
@@ -343,4 +388,21 @@
     height: 420px;
     min-height: 420px;
   }
+}
+/* Confirmation after a redirect from Create. Black on orange = 6.7:1 */
+.created-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard-sm);
+  padding: 14px 18px;
+  margin: 0 0 28px;
+  animation: riseIn 0.3s ease backwards;
 }

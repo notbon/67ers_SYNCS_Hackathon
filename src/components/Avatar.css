@@ -1,0 +1,16 @@
+.avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper-2);
+  object-fit: cover;
+  font-family: var(--sans);
+  font-weight: 800;
+  line-height: 1;
+  /* White on every palette colour clears 4.5:1 */
+  color: #ffffff;
+  text-transform: uppercase;
+}

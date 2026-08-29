@@ -3,13 +3,14 @@
 // Home wraps it with the landing content above and owns the sport-band
 // filter, which it hands down to MatchBrowse as a controlled value.
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MatchBrowse from "./MatchBrowse";
 import SportIcon from "../components/SportIcon";
 import useReveal from "../hooks/useReveal";
 import { fetchMatches } from "../services/matchService";
 import type { Match } from "../types";
 import { sportVars } from "../lib/sportTheme";
+import sydneySkyline from "../assets/sydney-skyline.svg";
 import "./Home.css";
 
 // Keep in step with the options in CreateMatch.tsx and MatchBrowse.tsx.
@@ -65,6 +66,18 @@ function distanceKm(
 
 export default function Home() {
   const [sport, setSport] = useState("");
+
+  // Confirmation after creating a match, handed over by CreateMatch's redirect.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const justCreated = Boolean(
+    (location.state as { created?: unknown } | null)?.created,
+  );
+
+  // Clear the history state so a refresh doesn't show the banner again.
+  useEffect(() => {
+    if (justCreated) navigate("/", { replace: true, state: null });
+  }, [justCreated, navigate]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -233,6 +246,9 @@ export default function Home() {
   return (
     <div ref={revealRef}>
       <section className="hero full-bleed section-dark" aria-labelledby="hero-title">
+        <img className="hero-map" src={sydneySkyline} alt="" aria-hidden="true" />
+        <span className="hero-scrim" aria-hidden="true" />
+
         <div className="wrap hero-inner">
           <p className="eyebrow">Pickup sport, sorted</p>
           <h1 id="hero-title">
@@ -356,6 +372,12 @@ export default function Home() {
           ))}
         </ol>
       </section>
+
+      {justCreated && (
+        <p className="created-banner" role="status">
+          Match created — it's in the list below.
+        </p>
+      )}
 
       <div id="browse">
         <MatchBrowse sport={sport} onSportChange={setSport} />

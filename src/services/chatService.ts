@@ -10,6 +10,7 @@ export type ChatMessage = {
   recipient_id: string | null;
   sender_id: string;
   sender_name: string;
+  sender_avatar: string | null;
   body: string;
   created_at: string;
 };
@@ -28,13 +29,15 @@ type Row = {
   sender_id: string;
   body: string;
   created_at: string;
-  sender?: { name: string } | { name: string }[] | null;
+  sender?: SenderRow | SenderRow[] | null;
 };
 
-function senderName(row: Row): string {
+type SenderRow = { name: string; avatar_url: string | null };
+
+function sender(row: Row): SenderRow | null {
   const s = row.sender;
-  if (!s) return "Unknown";
-  return Array.isArray(s) ? (s[0]?.name ?? "Unknown") : s.name;
+  if (!s) return null;
+  return Array.isArray(s) ? (s[0] ?? null) : s;
 }
 
 function toMessage(row: Row): ChatMessage {
@@ -44,7 +47,8 @@ function toMessage(row: Row): ChatMessage {
     match_id: row.match_id,
     recipient_id: row.recipient_id,
     sender_id: row.sender_id,
-    sender_name: senderName(row),
+    sender_name: sender(row)?.name ?? "Unknown",
+    sender_avatar: sender(row)?.avatar_url ?? null,
     body: row.body,
     created_at: row.created_at,
   };
@@ -52,7 +56,7 @@ function toMessage(row: Row): ChatMessage {
 
 const SELECT = `
   id, scope, match_id, recipient_id, sender_id, body, created_at,
-  sender:users!messages_sender_id_fkey ( name )
+  sender:users!messages_sender_id_fkey ( name, avatar_url )
 `;
 
 /** Most recent messages for a conversation, oldest first. */
@@ -152,11 +156,15 @@ export function subscribeToMessages(
 
         const { data } = await supabase
           .from("users")
-          .select("name")
+          .select("name, avatar_url")
           .eq("id", row.sender_id)
           .maybeSingle();
 
-        onMessage({ ...toMessage(row), sender_name: data?.name ?? "Unknown" });
+        onMessage({
+          ...toMessage(row),
+          sender_name: data?.name ?? "Unknown",
+          sender_avatar: data?.avatar_url ?? null,
+        });
       },
     )
     .subscribe();

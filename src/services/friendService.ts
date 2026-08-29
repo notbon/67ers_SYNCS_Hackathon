@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 export type Person = {
   id: string;
   name: string;
+  avatar_url?: string | null;
 };
 
 export type FriendRequest = {
@@ -33,8 +34,8 @@ export async function fetchFriends(userId: string): Promise<Person[]> {
     .from("friendships")
     .select(
       `requester_id, addressee_id,
-       requester:users!friendships_requester_id_fkey ( id, name ),
-       addressee:users!friendships_addressee_id_fkey ( id, name )`,
+       requester:users!friendships_requester_id_fkey ( id, name, avatar_url ),
+       addressee:users!friendships_addressee_id_fkey ( id, name, avatar_url )`,
     )
     .eq("status", "accepted");
 
@@ -65,7 +66,7 @@ export async function fetchCoAttendees(userId: string): Promise<Person[]> {
 
   const { data, error } = await supabase
     .from("match_participants")
-    .select("user_id, user:users ( id, name )")
+    .select("user_id, user:users ( id, name, avatar_url )")
     .in(
       "match_id",
       myMatches.map((m) => m.id),
@@ -93,7 +94,7 @@ export async function fetchPendingRequests(
 ): Promise<FriendRequest[]> {
   const { data, error } = await supabase
     .from("friendships")
-    .select("id, requester:users!friendships_requester_id_fkey ( id, name )")
+    .select("id, requester:users!friendships_requester_id_fkey ( id, name, avatar_url )")
     .eq("status", "pending")
     .eq("addressee_id", userId);
 
@@ -208,7 +209,10 @@ export async function findPeople(
 
   const byEmail = term.includes("@");
 
-  const base = supabase.from("users").select("id, name").neq("id", viewerId);
+  const base = supabase
+    .from("users")
+    .select("id, name, avatar_url")
+    .neq("id", viewerId);
   const { data, error } = byEmail
     ? await base.eq("email", term.toLowerCase()).limit(limit)
     : await base.ilike("name", `%${term}%`).limit(limit);

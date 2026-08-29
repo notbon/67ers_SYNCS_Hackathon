@@ -8,7 +8,7 @@ import {
 } from "../services/friendService";
 import type { SearchResult } from "../services/friendService";
 import { useFriendRequests } from "../context/FriendRequestsContext";
-import { avatarColour, initials } from "../lib/avatar";
+import Avatar from "../components/Avatar";
 import "./Search.css";
 
 export default function Search() {
@@ -148,13 +148,13 @@ export default function Search() {
           <ul className="search-results" role="list">
             {requests.map((r) => (
               <li key={r.id} className="search-result">
-                <span
+                <Avatar
+                  id={r.requester.id}
+                  name={r.requester.name}
+                  url={r.requester.avatar_url}
+                  size={44}
                   className="search-avatar"
-                  style={{ background: avatarColour(r.requester.id) }}
-                  aria-hidden="true"
-                >
-                  {initials(r.requester.name)}
-                </span>
+                />
                 <span className="search-name">{r.requester.name}</span>
                 <span className="search-action">
                   <button
@@ -224,13 +224,13 @@ export default function Search() {
           <ul className="search-results" role="list">
             {results.map((person) => (
               <li key={person.id} className="search-result">
-                <span
+                <Avatar
+                  id={person.id}
+                  name={person.name}
+                  url={person.avatar_url}
+                  size={44}
                   className="search-avatar"
-                  style={{ background: avatarColour(person.id) }}
-                  aria-hidden="true"
-                >
-                  {initials(person.name)}
-                </span>
+                />
 
                 <span className="search-name">{person.name}</span>
 
