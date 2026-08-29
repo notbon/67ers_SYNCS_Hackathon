@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import type { Match } from "../types";
 
 export type CreateMatchInput = {
   title: string;
@@ -23,4 +24,23 @@ export async function createMatch(match: CreateMatchInput) {
   }
 
   return data;
+}
+
+/**
+ * Fetch every match, ordered soonest-first. Filtering/searching (location,
+ * time, skill level, sport, date) happens client-side in the Browse page so
+ * we can do fuzzy location matching the database can't express cheaply.
+ */
+export async function fetchMatches(): Promise<Match[]> {
+  const { data, error } = await supabase
+    .from("matches")
+    .select("*")
+    .order("match_date", { ascending: true })
+    .order("match_time", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as Match[];
 }
