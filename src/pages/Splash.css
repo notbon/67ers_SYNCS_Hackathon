@@ -1,0 +1,125 @@
+.splash {
+    min-height: 100svh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: var(--bg);
+  }
+  
+  .splash-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    box-shadow: var(--shadow);
+    box-sizing: border-box;
+    text-align: center;
+  }
+  
+  .splash-brand {
+    margin: 0 0 8px;
+    font-size: 32px;
+    letter-spacing: -0.8px;
+    color: var(--text-h);
+  }
+  
+  .splash-subtitle {
+    margin: 0 0 28px;
+    color: var(--text);
+    font-size: 15px;
+  }
+  
+  .auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .auth-tab {
+    flex: 1;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+  }
+  
+  .auth-tab.active {
+    color: var(--text-h);
+    border-bottom-color: var(--accent);
+  }
+  
+  .splash-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+  
+  .splash-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .splash-form input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  
+  .splash-error {
+    color: #d13c3c;
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .splash-notice {
+    color: var(--accent);
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .splash-button {
+    padding: 13px;
+    margin-top: 4px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  
+  .splash-button:hover {
+    opacity: 0.9;
+  }
+  
+  .splash-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 480px) {
+    .splash-card {
+      padding: 32px 24px;
+    }
+  }

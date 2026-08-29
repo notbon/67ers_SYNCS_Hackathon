@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchMatches } from "../services/matchService";
 import {
@@ -6,7 +6,10 @@ import {
   locationScore,
 } from "../lib/locationMatch";
 import SportIcon from "../components/SportIcon";
-import type { Match } from "../types";
+import HostBadge from "../components/HostBadge";
+import { fetchHostsByToken } from "../services/hostService";
+import { getHostToken, type PlayerToken } from "../lib/playerToken";
+import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
 
 // Keep these in step with the options offered in CreateMatch.tsx.
@@ -116,9 +119,14 @@ export default function MatchBrowse({
   onSportChange,
 }: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const locationContainerRef = useRef<HTMLDivElement>(null);
+
+  const locationAutocompleteRef =
+  useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +148,98 @@ export default function MatchBrowse({
     };
   }, []);
 
+  // Resolve host profiles (photo + name) for the loaded matches in one batch.
+  // Purely decorative, so failures inside fetchHostsByToken degrade to no badge.
+  useEffect(() => {
+    if (matches.length === 0) return;
+
+    let cancelled = false;
+    fetchHostsByToken(matches.map(getHostToken)).then((resolved) => {
+      if (!cancelled) setHosts(resolved);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
+
+  function hostFor(match: Match): MatchHost | null {
+    const token = getHostToken(match);
+    return (token && hosts.get(token)) || match.host || null;
+  }
+
+  useEffect(() => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey) {
+    console.error("Google Maps API key missing");
+    return;
+  }
+
+  async function initAutocomplete() {
+    if (!locationContainerRef.current) return;
+
+    const { PlaceAutocompleteElement } =
+      await google.maps.importLibrary(
+        "places"
+      ) as google.maps.PlacesLibrary;
+
+    const autocomplete = new PlaceAutocompleteElement();
+
+    autocomplete.placeholder = "Search for a location";
+
+    locationAutocompleteRef.current = autocomplete;
+
+    autocomplete.addEventListener(
+      "gmp-select",
+      async (
+        event: google.maps.places.PlacePredictionSelectEvent
+      ) => {
+        const place = event.placePrediction.toPlace();
+
+        await place.fetchFields({
+          fields: ["displayName", "formattedAddress"],
+        });
+
+        const selectedLocation =
+          place.formattedAddress ||
+          place.displayName ||
+          "";
+
+        updateFilter("location", selectedLocation);
+      }
+    );
+
+    locationContainerRef.current.innerHTML = "";
+    locationContainerRef.current.appendChild(autocomplete);
+  }
+
+  if (window.google?.maps) {
+    initAutocomplete();
+    return;
+  }
+
+  const existingScript = document.querySelector(
+    'script[src*="maps.googleapis.com/maps/api/js"]'
+  );
+
+  if (existingScript) {
+    existingScript.addEventListener("load", initAutocomplete);
+    return;
+  }
+
+  const script = document.createElement("script");
+
+  script.src =
+    `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+
+  script.async = true;
+  script.defer = true;
+  script.onload = initAutocomplete;
+
+  document.head.appendChild(script);
+}, []);
+
   // Mirror the controlled sport value into the internal filter state.
   useEffect(() => {
     if (sport === undefined) return;
@@ -154,6 +254,10 @@ export default function MatchBrowse({
   function clearFilters() {
     setFilters(EMPTY_FILTERS);
     onSportChange?.("");
+
+    if (locationAutocompleteRef.current) {
+      locationAutocompleteRef.current.value = "";
+    }
   }
 
   const hasActiveFilters = useMemo(
@@ -192,15 +296,14 @@ export default function MatchBrowse({
       <p className="page-subtitle">Find a game near you and jump in.</p>
 
       <form className="filters" onSubmit={(e) => e.preventDefault()}>
-        <label className="filter filter--wide">
+        <div className="filter filter--wide">
           <span>Location</span>
-          <input
-            type="search"
-            placeholder="e.g. Moore Park, Sydney"
-            value={filters.location}
-            onChange={(e) => updateFilter("location", e.target.value)}
+
+          <div
+            ref={locationContainerRef}
+            className="browse-location-autocomplete"
           />
-        </label>
+        </div>
 
         <label className="filter">
           <span>Sport</span>
@@ -344,6 +447,10 @@ export default function MatchBrowse({
                         <dd>up to {match.max_players}</dd>
                       </div>
                     </dl>
+
+                    <div className="match-card-foot">
+                      <HostBadge host={hostFor(match)} />
+                    </div>
                   </Link>
                 </li>
               ))}
