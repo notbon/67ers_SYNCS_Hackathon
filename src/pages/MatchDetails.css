@@ -285,6 +285,40 @@
   border-radius: 10px;
 }
 
+/* Roster rows are links to the player's public profile */
+a.participant-card--link {
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+a.participant-card--link:hover {
+  border-color: #c9ccd2;
+  background-color: #eef0f3;
+}
+
+.participant-view {
+  margin: 4px 0 0;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+a.participant-card--link:hover .participant-view {
+  color: #444;
+}
+
+.participant-name-link {
+  color: #222;
+  text-decoration: none;
+}
+
+.participant-name-link:hover {
+  text-decoration: underline;
+}
+
 .participant-photo {
   width: 50px;
   height: 50px;

@@ -1,0 +1,158 @@
+.player-profile {
+  max-width: 720px;
+}
+
+.player-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.player-back:hover {
+  text-decoration: underline;
+}
+
+.player-status {
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* Hero */
+
+.player-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.player-hero-avatar {
+  border-radius: 50%;
+}
+
+.player-hero-text {
+  min-width: 0;
+}
+
+.player-hero-text h1 {
+  margin: 0 0 4px;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.player-skill {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.player-hero-edit {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.player-hero-edit:hover {
+  text-decoration: underline;
+}
+
+/* Stat tiles */
+
+.player-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.player-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  text-align: center;
+}
+
+.player-stat-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.player-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+/* Cards */
+
+.player-card {
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+}
+
+.player-card h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.player-bio {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.player-bio--empty {
+  color: var(--text);
+}
+
+.player-badges-note {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.player-badges-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 560px) {
+  .player-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .player-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .player-card {
+    padding: 20px;
+  }
+}

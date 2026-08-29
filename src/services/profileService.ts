@@ -42,18 +42,61 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
-export type UpdateProfileInput = { name?: string; skill_level?: string | null; avatar_url?: string | null };
+export type UpdateProfileInput = {
+  name?: string;
+  skill_level?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+};
 
-export async function updateProfile(userId: string, updates: UpdateProfileInput) {
-  const { data, error } = await supabase
+// PostgREST reports a write to a column the table doesn't have as PGRST204
+// ("Could not find the 'X' column of 'users' in the schema cache").
+function isMissingColumnError(error: unknown, column: string): boolean {
+  const e = error as { code?: string; message?: string } | null;
+  if (!e) return false;
+  return e.code === "PGRST204" || (e.message ?? "").includes(`'${column}' column`);
+}
+
+export type UpdateProfileResult = {
+  profile: Profile | null;
+  /**
+   * false when `bio` was in the payload but the `users.bio` column doesn't
+   * exist yet (migration supabase/20260830_add_bio.sql not applied). Everything
+   * else still saved; the caller should tell the user the bio didn't persist.
+   */
+  bioPersisted: boolean;
+};
+
+export async function updateProfile(
+  userId: string,
+  updates: UpdateProfileInput,
+): Promise<UpdateProfileResult> {
+  let { data, error } = await supabase
     .from("users")
     .update(updates)
     .eq("id", userId)
     .select()
     .maybeSingle();
 
+  // `bio` was added in supabase/20260830_add_bio.sql. If that migration hasn't
+  // run yet, retry without `bio` so name / skill level / avatar still save —
+  // but report that the bio did not persist.
+  if (error && "bio" in updates && isMissingColumnError(error, "bio")) {
+    const rest: UpdateProfileInput = { ...updates };
+    delete rest.bio;
+    ({ data, error } = await supabase
+      .from("users")
+      .update(rest)
+      .eq("id", userId)
+      .select()
+      .maybeSingle());
+
+    if (error) throw error;
+    return { profile: data as Profile | null, bioPersisted: false };
+  }
+
   if (error) throw error;
-  return data as Profile | null;
+  return { profile: data as Profile | null, bioPersisted: true };
 }
 
 // Every match hosted by this user, soonest first. No row cap or date filter,

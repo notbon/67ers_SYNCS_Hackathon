@@ -49,6 +49,7 @@ export default function Profile() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [editName, setEditName] = useState("");
   const [editSkillLevel, setEditSkillLevel] = useState("");
+  const [editBio, setEditBio] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -72,6 +73,7 @@ export default function Profile() {
         setProfile(data);
         setEditName(data?.name ?? "");
         setEditSkillLevel(data?.skill_level ?? "");
+        setEditBio(data?.bio ?? "");
       })
       .catch((err) => setProfileError((err as Error).message))
       .finally(() => { if (!cancelled) setProfileLoading(false); });
@@ -103,9 +105,21 @@ export default function Profile() {
     setProfileError(null);
     setSaveSuccess(false);
     try {
-      const updated = await updateProfile(userId, { name: editName, skill_level: editSkillLevel || null });
+      const wantedBio = editBio.trim();
+      const { profile: updated, bioPersisted } = await updateProfile(userId, {
+        name: editName,
+        skill_level: editSkillLevel || null,
+        bio: wantedBio || null,
+      });
       if (updated) setProfile(updated);
-      setSaveSuccess(true);
+
+      if (!bioPersisted && wantedBio) {
+        setProfileError(
+          "Name and skill level saved, but your bio could not be stored: the database is missing the \"bio\" column. Run supabase/20260830_add_bio.sql (alter table users add column if not exists bio text;) in the Supabase SQL editor, then save again.",
+        );
+      } else {
+        setSaveSuccess(true);
+      }
     } catch (err) {
       setProfileError((err as Error).message);
     } finally {
@@ -135,6 +149,9 @@ export default function Profile() {
         <div>
           <h1>{profile?.name ? `Hi, ${profile.name}` : "Your Profile"}</h1>
           <p className="page-subtitle">Manage your details and keep track of your matches.</p>
+          <Link to={`/players/${userId}`} className="profile-public-link">
+            View public profile →
+          </Link>
         </div>
         <button type="button" className="profile-link-button" onClick={() => signOut()}>
           Sign Out
@@ -164,6 +181,17 @@ export default function Profile() {
                 <option value="">Not set</option>
                 {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
               </select>
+            </label>
+
+            <label className="profile-field">
+              <span>Bio</span>
+              <textarea
+                rows={4}
+                maxLength={500}
+                placeholder="A short blurb other players see on your public profile."
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+              />
             </label>
 
             {profileError && <p className="profile-error">{profileError}</p>}
