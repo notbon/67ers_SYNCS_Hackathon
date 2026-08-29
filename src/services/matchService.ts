@@ -100,10 +100,11 @@ export async function fetchParticipants(
   const byMatch = new Map<string, MatchPlayer[]>();
   if (matchIds.length === 0) return byMatch;
 
-  const { data, error } = await supabase
-    .from("match_participants")
-    .select("match_id, user:users ( id, name, avatar_url )")
-    .in("match_id", matchIds);
+const { data, error } = await supabase
+  .from("match_participants")
+  .select("match_id, user:users ( id, name, avatar_url )")
+  .in("match_id", matchIds)
+  .eq("status", "approved");
 
   if (error) {
     console.error("Failed to load rosters:", error);
