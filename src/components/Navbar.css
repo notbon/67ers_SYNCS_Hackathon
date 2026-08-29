@@ -2,71 +2,92 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  border-bottom: 3px solid var(--ink);
+  background: var(--paper);
 }
 
 .navbar-inner {
-  max-width: 1126px;
-  margin: 0 auto;
-  padding: 14px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  padding-bottom: 14px;
   position: relative;
 }
 
 .brand {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-h);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--heading);
+  font-size: 24px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--ink);
   text-decoration: none;
+}
+
+.brand-block {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+}
+
+.brand-accent {
+  color: var(--accent-ink);
 }
 
 .nav-links {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-link {
-  color: var(--text);
+  position: relative;
+  color: var(--text-h);
   text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 8px 14px;
-  border-radius: 8px;
-  transition: background 0.2s, color 0.2s;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 14px;
+  border: 2px solid transparent;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
 .nav-link:hover {
-  background: var(--code-bg);
-  color: var(--text-h);
+  border-color: var(--ink);
 }
 
+/* Active state: solid orange block with black text (6.7:1) */
 .nav-link.active {
-  background: var(--accent-bg);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: var(--shadow-hard-sm);
 }
 
 .nav-toggle {
   display: none;
   flex-direction: column;
   gap: 4px;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: none;
+  background: var(--paper);
+  border: 2px solid var(--ink);
   cursor: pointer;
 }
 
 .nav-toggle span {
   display: block;
-  width: 20px;
-  height: 2px;
-  background: var(--text-h);
-  border-radius: 2px;
+  width: 18px;
+  height: 2.5px;
+  background: var(--ink);
 }
 
 @media (max-width: 720px) {
@@ -77,14 +98,15 @@
   .nav-links {
     display: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 14px);
     left: 0;
     right: 0;
     flex-direction: column;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 8px;
-    gap: 2px;
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-top: none;
+    padding: 10px;
+    gap: 6px;
   }
 
   .nav-links.open {
@@ -92,6 +114,6 @@
   }
 
   .nav-link {
-    padding: 12px 14px;
+    padding: 13px 14px;
   }
 }
