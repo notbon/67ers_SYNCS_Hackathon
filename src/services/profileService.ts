@@ -1,11 +1,9 @@
 import { supabase } from "../lib/supabase";
+import type { Profile, Match } from "../types";
 
 export type SignUpInput = { name: string; email: string; password: string };
 export type SignInInput = { email: string; password: string };
 
-// Creates the Supabase Auth user, then creates the matching row in our own
-// `users` table (id must match the auth user's id so matches.created_by
-// and match_participants.user_id line up).
 export async function signUp({ name, email, password }: SignUpInput) {
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
@@ -31,4 +29,52 @@ export async function signIn({ email, password }: SignInInput) {
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
+}
+
+export async function fetchProfile(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export type UpdateProfileInput = { name: string; skill_level: string | null };
+
+export async function updateProfile(userId: string, updates: UpdateProfileInput) {
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as Profile | null;
+}
+
+export async function fetchCreatedMatches(userId: string): Promise<Match[]> {
+  const { data, error } = await supabase
+    .from("matches")
+    .select("*")
+    .eq("created_by", userId)
+    .order("match_date", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchJoinedMatches(userId: string): Promise<Match[]> {
+  const { data, error } = await supabase
+    .from("match_participants")
+    .select("matches(*)")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return (data ?? [])
+    .map((row) => row.matches as unknown as Match | null)
+    .filter((m): m is Match => Boolean(m));
 }
