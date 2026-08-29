@@ -112,4 +112,27 @@
       padding: 20px;
     }
   }
+  .danger-zone {
+    border-color: #d13c3c;
+  }
   
+  .profile-danger-button {
+    padding: 12px 20px;
+    border: 1px solid #d13c3c;
+    border-radius: 8px;
+    background: none;
+    color: #d13c3c;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  
+  .profile-danger-button:hover {
+    background: rgba(209, 60, 60, 0.08);
+  }
+  
+  .profile-danger-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }

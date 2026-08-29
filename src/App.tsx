@@ -6,22 +6,27 @@ import MatchDetails from './pages/MatchDetails';
 import Profile from './pages/Profile';
 import Splash from './pages/Splash';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ResetPassword from './pages/ResetPassword';
 import './App.css';
 
 function AppRoutes() {
   const { session, loading } = useAuth();
 
   if (loading) return <div className="app-loading">Loading...</div>;
-  if (!session) return <Splash />;
 
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/create" element={<CreateMatch />} />
-        <Route path="/matches/:id" element={<MatchDetails />} />
-        <Route path="/profile" element={<Profile />} />
-      </Route>
+      <Route path="/reset-password" element={<ResetPassword />} />
+      {!session ? (
+        <Route path="*" element={<Splash />} />
+      ) : (
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/create" element={<CreateMatch />} />
+          <Route path="/matches/:id" element={<MatchDetails />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+      )}
     </Routes>
   );
 }
