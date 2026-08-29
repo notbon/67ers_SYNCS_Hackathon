@@ -5,7 +5,7 @@ import {
   useState,
 } from "react";
 import type { FormEvent } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
   fetchParticipants,
@@ -828,9 +828,10 @@ export default function MatchDetails() {
               ) : (
                 <div className="participant-list">
                   {participants.map((player) => (
-                    <div
+                    <Link
                       key={player.id}
-                      className="participant-card"
+                      to={`/players/${player.id}`}
+                      className="participant-card participant-card--link"
                     >
                       <Avatar
                         id={player.id}
@@ -853,8 +854,9 @@ export default function MatchDetails() {
                             </span>
                           )}
                         </div>
+                        <p className="participant-view">View profile →</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -881,9 +883,12 @@ export default function MatchDetails() {
                         >
                           <div className="participant-details">
                             <div className="participant-name">
-                              <span>
+                              <Link
+                                to={`/players/${request.user_id}`}
+                                className="participant-name-link"
+                              >
                                 {request.name}
-                              </span>
+                              </Link>
                             </div>
 
                             <span>

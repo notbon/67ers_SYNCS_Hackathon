@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import CreateMatch from './pages/CreateMatch';
 import MatchDetails from './pages/MatchDetails';
 import Profile from './pages/Profile';
+import PlayerProfile from './pages/PlayerProfile';
 import Splash from './pages/Splash';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ResetPassword from './pages/ResetPassword';
@@ -28,6 +29,7 @@ function AppRoutes() {
           <Route path="/matches/:id" element={<MatchDetails />} />
           <Route path="/search" element={<Search />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/players/:id" element={<PlayerProfile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       )}
