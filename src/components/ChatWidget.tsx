@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useAuth } from "../context/AuthContext";
+import { useFriendRequests } from "../context/FriendRequestsContext";
 import {
   fetchMessages,
   sendMessage,
@@ -14,7 +15,6 @@ import {
   fetchFriends,
   fetchMyMatches,
   fetchOutgoingRequests,
-  fetchPendingRequests,
   removeFriendship,
   searchUsers,
   sendFriendRequest,
@@ -60,7 +60,7 @@ export function ChatWidget() {
     { id: string; title: string; sport: string }[]
   >([]);
   const [people, setPeople] = useState<Person[]>([]);
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const { requests, refresh: refreshRequests } = useFriendRequests();
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [outgoing, setOutgoing] = useState<Map<string, string>>(new Map());
 
@@ -131,38 +131,19 @@ export function ChatWidget() {
       Promise.all([
         fetchFriends(userId),
         fetchCoAttendees(userId),
-        fetchPendingRequests(userId),
         fetchOutgoingRequests(userId),
       ])
-        .then(([friends, coAttendees, pending, sent]) => {
+        .then(([friends, coAttendees, sent]) => {
           const merged = new Map<string, Person>();
           friends.forEach((p) => merged.set(p.id, p));
           coAttendees.forEach((p) => merged.set(p.id, p));
           setPeople([...merged.values()]);
-          setRequests(pending);
           setFriendIds(new Set(friends.map((f) => f.id)));
           setOutgoing(new Map(sent.map((r) => [r.addresseeId, r.id])));
         })
         .catch((err) => console.error("Failed to load people:", err));
     }
   }, [open, userId, tab]);
-
-  // --- Pending request count for the button badge ---
-  useEffect(() => {
-    if (!userId) {
-      setRequests([]);
-      return;
-    }
-    let cancelled = false;
-    fetchPendingRequests(userId)
-      .then((rows) => {
-        if (!cancelled) setRequests(rows);
-      })
-      .catch((err) => console.error("Failed to load requests:", err));
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
 
   // --- Debounced people search ---
   useEffect(() => {
@@ -233,7 +214,7 @@ export function ChatWidget() {
   async function accept(request: FriendRequest) {
     try {
       await acceptFriendRequest(request.id);
-      setRequests((prev) => prev.filter((r) => r.id !== request.id));
+      await refreshRequests();
       setFriendIds((prev) => new Set(prev).add(request.requester.id));
       setPeople((prev) =>
         prev.some((p) => p.id === request.requester.id)
@@ -249,7 +230,7 @@ export function ChatWidget() {
   async function decline(id: string) {
     try {
       await removeFriendship(id);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
+      await refreshRequests();
     } catch (err) {
       console.error("Failed to decline request:", err);
       setError("Couldn't decline that request.");
