@@ -25,7 +25,103 @@ export async function createMatch(match: CreateMatchInput) {
     throw error;
   }
 
+  // The creator is the host AND a player on their own match, so add them to
+  // the roster straight away (approved). Best-effort: never fail match creation
+  // over this — worst case the host just isn't a roster row on an old-style
+  // match, which the rest of the app already tolerates.
+  const newMatchId = data?.[0]?.id;
+  if (newMatchId && match.created_by) {
+    const { error: rosterError } = await supabase
+      .from("match_participants")
+      .upsert(
+        { match_id: newMatchId, user_id: match.created_by, status: "approved" },
+        { onConflict: "match_id,user_id" },
+      );
+    if (rosterError) {
+      console.error("Could not add host to the roster:", rosterError);
+    }
+  }
+
   return data;
+}
+
+/**
+ * Move the host role to another user by repointing `matches.created_by`. The
+ * `.eq("created_by", fromHostId)` guard means only the current host can do it,
+ * and because there is a single host column the previous host immediately
+ * loses every host permission.
+ */
+export async function transferHost(
+  matchId: string,
+  fromHostId: string,
+  toUserId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("matches")
+    .update({ created_by: toUserId })
+    .eq("id", matchId)
+    .eq("created_by", fromHostId)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error("Only the current host can transfer the role.");
+}
+
+/** Host action: remove an approved / pending player from the match. */
+export async function kickPlayer(
+  matchId: string,
+  userId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("match_participants")
+    .delete()
+    .eq("match_id", matchId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
+export type ReportPlayerResult = { stored: boolean };
+
+// Categories offered in the "Report a player" dialog.
+export const REPORT_CATEGORIES = [
+  "Safety & Physical Violations",
+  "Verbal & Psychological Abuse",
+  "Unfair Advantage & Cheating",
+  "Behavioral & Administrative",
+  "Other",
+] as const;
+export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
+
+/**
+ * Post-match "report a player" (misconduct flag). STUB: there is no
+ * `player_reports` table in the schema yet, so this attempts the insert and, if
+ * the table is missing, resolves with `{ stored: false }` instead of throwing.
+ * Wiring up moderation is out of scope; run supabase/20260831_player_reports.sql
+ * to make it persist.
+ */
+export async function reportPlayer(
+  matchId: string,
+  reporterId: string,
+  reportedId: string,
+  reason: string,
+): Promise<ReportPlayerResult> {
+  const { error } = await supabase.from("player_reports").insert({
+    match_id: matchId,
+    reporter_id: reporterId,
+    reported_id: reportedId,
+    reason,
+  });
+
+  if (!error) return { stored: true };
+
+  // 42P01 = undefined_table, PGRST205 = table not in schema cache.
+  if (error.code === "42P01" || error.code === "PGRST205") {
+    console.warn("player_reports table not set up yet — report not stored.");
+    return { stored: false };
+  }
+  throw error;
 }
 
 // Fields a host is allowed to change after a match exists. Sport and the
