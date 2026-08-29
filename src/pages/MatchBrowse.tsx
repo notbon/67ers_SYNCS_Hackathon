@@ -105,7 +105,16 @@ function formatTime(time: string): string {
   });
 }
 
-export default function MatchBrowse() {
+type MatchBrowseProps = {
+  /** Optional controlled sport filter, driven by the sport band on Home. */
+  sport?: string;
+  onSportChange?: (sport: string) => void;
+};
+
+export default function MatchBrowse({
+  sport,
+  onSportChange,
+}: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +140,20 @@ export default function MatchBrowse() {
     };
   }, []);
 
+  // Mirror the controlled sport value into the internal filter state.
+  useEffect(() => {
+    if (sport === undefined) return;
+    setFilters((prev) => (prev.sport === sport ? prev : { ...prev, sport }));
+  }, [sport]);
+
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    if (key === "sport") onSportChange?.(value as string);
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    onSportChange?.("");
   }
 
   const hasActiveFilters = useMemo(
@@ -252,7 +273,7 @@ export default function MatchBrowse() {
         <button
           type="button"
           className="filters-clear"
-          onClick={() => setFilters(EMPTY_FILTERS)}
+          onClick={clearFilters}
           disabled={!hasActiveFilters}
         >
           Clear filters
@@ -267,7 +288,7 @@ export default function MatchBrowse() {
 
       {!loading && !error && (
         <>
-          <p className="match-browse-count">
+          <p className="match-browse-count" aria-live="polite">
             {visibleMatches.length}{" "}
             {visibleMatches.length === 1 ? "match" : "matches"}
             {hasActiveFilters ? " matching your filters" : ""}
@@ -279,8 +300,12 @@ export default function MatchBrowse() {
             </p>
           ) : (
             <ul className="match-list" role="list">
-              {visibleMatches.map(({ match, locationScore: score }) => (
-                <li key={match.id}>
+              {visibleMatches.map(({ match, locationScore: score }, index) => (
+                <li
+                  key={match.id}
+                  className="match-item"
+                  style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
+                >
                   <Link to={`/matches/${match.id}`} className="match-card">
                     <div className="match-card-head">
                       <h3>{match.title}</h3>
