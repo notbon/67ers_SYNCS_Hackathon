@@ -20,7 +20,15 @@ export interface Match {
   skill_level: string | null;
   description: string | null;
   created_by: string | null;
+  host?: MatchHost | null;
 }
+
+export type MatchHost = {
+  id: string;
+  display_name: string | null;
+  avatar_url?: string | null;
+};
+
 
 export interface MatchParticipant {
   match_id: string;
