@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createMatch } from "../services/matchService";
 import "./CreateMatch.css";
 
@@ -11,6 +11,71 @@ function CreateMatch() {
   const [maxPlayers, setMaxPlayers] = useState("");
   const [skillLevel, setSkillLevel] = useState("");
   const [description, setDescription] = useState("");
+
+  const locationRef = useRef<HTMLDivElement>(null);
+  const autocompleteElementRef =
+  useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
+
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      console.error("Google Maps API key missing");
+      return;
+    }
+
+async function initAutocomplete() {
+  if (!locationRef.current) return;
+
+  const { PlaceAutocompleteElement } =
+    await google.maps.importLibrary("places") as google.maps.PlacesLibrary;
+
+  const placeAutocomplete = new PlaceAutocompleteElement();
+
+  autocompleteElementRef.current = placeAutocomplete;
+
+  placeAutocomplete.placeholder = "Search for a location";
+
+  placeAutocomplete.addEventListener(
+    "gmp-select",
+    async (event: google.maps.places.PlacePredictionSelectEvent) => {
+      const place = event.placePrediction.toPlace();
+
+      await place.fetchFields({
+        fields: ["displayName", "formattedAddress"],
+      });
+
+      const selectedLocation =
+        place.formattedAddress ||
+        place.displayName ||
+        "";
+
+      setLocation(selectedLocation);
+    }
+  );
+
+  locationRef.current.replaceWith(placeAutocomplete);
+}
+
+    const existingScript = document.querySelector(
+      'script[src*="maps.googleapis.com/maps/api/js"]'
+    );
+
+    if (existingScript) {
+      initAutocomplete();
+      return;
+    }
+
+    const script = document.createElement("script");
+
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+
+    script.async = true;
+    script.defer = true;
+    script.onload = initAutocomplete;
+
+    document.head.appendChild(script);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +104,10 @@ function CreateMatch() {
   setMaxPlayers("");
   setSkillLevel("");
   setDescription("");
+
+  if (autocompleteElementRef.current) {
+    autocompleteElementRef.current.value = "";
+  }
 } catch (error) {
   console.error("Error creating match:", error);
   alert("Could not create match");
@@ -74,12 +143,7 @@ function CreateMatch() {
           <option value="Running">Running</option>
         </select>
 
-        <input
-          required
-          placeholder="Location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
+        <div ref={locationRef}></div>
 
         <input
           required
