@@ -41,6 +41,102 @@ function MatchList({ matches, emptyText, emptyLinkTo, emptyLinkText }: {
   );
 }
 
+function formatMatchDate(date: string): string {
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatMatchTime(time: string): string {
+  const hhmm = (time ?? "").slice(0, 5);
+  const parsed = new Date(`2000-01-01T${hhmm}:00`);
+  if (Number.isNaN(parsed.getTime())) return hhmm;
+  return parsed.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+// Interactive version of MatchList for the matches the signed-in user hosts:
+// each row expands in place to show the full details, and links through to the
+// match page.
+function HostedMatchList({ matches }: { matches: Match[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (matches.length === 0) {
+    return (
+      <p className="profile-empty">
+        You aren't hosting any matches yet. <Link to="/create">Create one</Link>.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="profile-hosted-list">
+      {matches.map((m) => {
+        const open = expandedId === m.id;
+        const panelId = `hosted-match-${m.id}`;
+
+        return (
+          <li key={m.id} className="profile-hosted-item">
+            <button
+              type="button"
+              className="profile-hosted-summary"
+              aria-expanded={open}
+              aria-controls={panelId}
+              onClick={() => setExpandedId(open ? null : m.id)}
+            >
+              <span className="profile-hosted-heading">
+                <span className="profile-hosted-title">{m.title}</span>
+                <span className="profile-hosted-meta">{m.sport} · {m.location}</span>
+              </span>
+              <span
+                className={`profile-hosted-chevron${open ? " is-open" : ""}`}
+                aria-hidden="true"
+              >
+                ▾
+              </span>
+            </button>
+
+            {open && (
+              <div className="profile-hosted-detail" id={panelId}>
+                <dl className="profile-hosted-facts">
+                  <div>
+                    <dt>Date</dt>
+                    <dd>{formatMatchDate(m.match_date)}</dd>
+                  </div>
+                  <div>
+                    <dt>Time</dt>
+                    <dd>{formatMatchTime(m.match_time)}</dd>
+                  </div>
+                  <div>
+                    <dt>Skill level</dt>
+                    <dd>{m.skill_level ?? "All Levels"}</dd>
+                  </div>
+                  <div>
+                    <dt>Max players</dt>
+                    <dd>{m.max_players}</dd>
+                  </div>
+                </dl>
+
+                {m.description && (
+                  <p className="profile-hosted-description">{m.description}</p>
+                )}
+
+                <Link to={`/matches/${m.id}`} className="profile-hosted-open">
+                  Open match page →
+                </Link>
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export default function Profile() {
   const { session } = useAuth();
   const userId = session?.user?.id;
@@ -177,16 +273,11 @@ export default function Profile() {
       </div>
 
       <div className="profile-card">
-        <h2>Matches You Created</h2>
+        <h2>Matches You're Hosting</h2>
         {matchesLoading ? (
           <p>Loading...</p>
         ) : (
-          <MatchList
-            matches={createdMatches}
-            emptyText="You haven't created any matches yet."
-            emptyLinkTo="/create"
-            emptyLinkText="Create one"
-          />
+          <HostedMatchList matches={createdMatches} />
         )}
       </div>
 
