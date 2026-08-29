@@ -212,3 +212,52 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Motion ---------- */
+
+/* Cards animate in as they appear; keyed by match id, so results that survive
+   a filter change stay put instead of re-animating on every keystroke. */
+.match-item {
+  animation: cardIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.match-card-sport svg {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.match-card:hover .match-card-sport svg {
+  transform: scale(1.16) rotate(-8deg);
+}
+
+.match-card-head h3 {
+  transition: color 0.15s ease;
+}
+
+.match-card:hover .match-card-head h3 {
+  color: var(--accent-ink);
+}
+
+.match-browse .filter input,
+.match-browse .filter select {
+  transition: box-shadow 0.14s ease, transform 0.14s ease;
+}
+
+.match-browse .filter input:hover,
+.match-browse .filter select:hover {
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.match-browse-count {
+  animation: cardIn 0.3s ease backwards;
+}
