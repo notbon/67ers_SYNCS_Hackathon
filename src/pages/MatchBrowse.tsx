@@ -4,6 +4,10 @@ import { fetchMatches } from "../services/matchService";
 import SportIcon from "../components/SportIcon";
 import HostBadge from "../components/HostBadge";
 import { fetchHostsByToken } from "../services/hostService";
+import { fetchParticipants } from "../services/matchService";
+import type { MatchPlayer } from "../services/matchService";
+import { avatarColour, initials } from "../lib/avatar";
+import { sportVars } from "../lib/sportTheme";
 import { getHostToken, type PlayerToken } from "../lib/playerToken";
 import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
@@ -133,6 +137,8 @@ export default function MatchBrowse({
 }: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
+  const [rosters, setRosters] = useState<Map<string, MatchPlayer[]>>(new Map());
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -166,6 +172,22 @@ export default function MatchBrowse({
       cancelled = true;
     };
   }, []);
+
+  // How many players are signed up to each match, in one batch.
+  useEffect(() => {
+    if (matches.length === 0) return;
+    let cancelled = false;
+
+    fetchParticipants(matches.map((m) => m.id))
+      .then((people) => {
+        if (!cancelled) setRosters(people);
+      })
+      .catch((err) => console.error("Failed to load rosters:", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
 
   // Resolve host profiles (photo + name) for the loaded matches in one batch.
   // Purely decorative, so failures inside fetchHostsByToken degrade to no badge.
@@ -288,6 +310,20 @@ export default function MatchBrowse({
     }
   }
 
+  // Active filters living inside the collapsed group — surfaced on the toggle
+  // so a filter is never silently applied out of sight.
+  const advancedCount = useMemo(
+    () =>
+      [
+        filters.skillLevel,
+        filters.dateFrom,
+        filters.dateTo,
+        filters.timeFrom,
+        filters.timeTo,
+      ].filter((v) => v.trim() !== "").length,
+    [filters],
+  );
+
   const hasActiveFilters = useMemo(
     () => Object.values(filters).some((value) => value.trim() !== ""),
     [filters],
@@ -402,6 +438,26 @@ export default function MatchBrowse({
           </select>
         </label>
 
+        <div className="filters-advanced-toggle">
+          <button
+            type="button"
+            className="filters-more"
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-filters"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced ? "Fewer filters" : "More filters"}
+            {!showAdvanced && advancedCount > 0 && (
+              <span className="filters-more-count">{advancedCount}</span>
+            )}
+          </button>
+        </div>
+
+        <div
+          id="advanced-filters"
+          className="filters-advanced"
+          hidden={!showAdvanced}
+        >
         <label className="filter">
           <span>Skill level</span>
           <select
@@ -455,6 +511,8 @@ export default function MatchBrowse({
           />
         </label>
 
+        </div>
+
         <button
           type="button"
           className="filters-clear"
@@ -491,48 +549,97 @@ export default function MatchBrowse({
                   className="match-item"
                   style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
                 >
-                  <Link to={`/matches/${match.id}`} className="match-card">
-                    <div className="match-card-head">
-                      <h3>{match.title}</h3>
+                  <Link
+                    to={`/matches/${match.id}`}
+                    className="match-card"
+                    style={sportVars(match.sport)}
+                  >
+                    <span className="match-card-bar" aria-hidden="true" />
+
+                    <div className="match-card-top">
                       <span className="match-card-sport">
                         <SportIcon sport={match.sport} size={15} />
                         {match.sport}
                       </span>
+                      <span className="match-card-skill">
+                        {match.skill_level ?? "All levels"}
+                      </span>
                     </div>
 
-                    <dl className="match-card-meta">
-                      <div>
-                        <dt>Location</dt>
-                        <dd>
-                          {match.location}
-                         {distance !== null && (
-                            <span className="match-card-approx">
-                              {" "}
-                              · {distance.toFixed(1)} km away
-                            </span>
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>When</dt>
-                        <dd>
-                          {formatDate(match.match_date)} ·{" "}
-                          {formatTime(match.match_time)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Skill</dt>
-                        <dd>{match.skill_level ?? "All levels"}</dd>
-                      </div>
-                      <div>
-                        <dt>Players</dt>
-                        <dd>up to {match.max_players}</dd>
-                      </div>
+                    <h3>{match.title}</h3>
+
+                    <dl className="match-card-facts">
+                      <dt className="visually-hidden">Location</dt>
+                      <dd>
+                        {match.location}
+                        {distance !== null && (
+                          <span className="match-card-approx">
+                            {" "}
+                            · {distance.toFixed(1)} km away
+                          </span>
+                        )}
+                      </dd>
+                      <dt className="visually-hidden">When</dt>
+                      <dd>
+                        {formatDate(match.match_date)} ·{" "}
+                        {formatTime(match.match_time)}
+                      </dd>
                     </dl>
 
                     <div className="match-card-foot">
-                      <HostBadge host={hostFor(match)} />
+                      <HostBadge host={hostFor(match)} size={34} />
+                      {(() => {
+                        const players = rosters.get(match.id) ?? [];
+                        const shown = players.slice(0, 3);
+                        const extra = players.length - shown.length;
+                        return (
+                          <span className="match-roster">
+                            {players.length > 0 && (
+                              <span className="roster-faces" aria-hidden="true">
+                                {shown.map((p) => (
+                                  <span
+                                    key={p.id}
+                                    className="roster-face"
+                                    style={{ background: avatarColour(p.id) }}
+                                    title={p.name}
+                                  >
+                                    {initials(p.name)}
+                                  </span>
+                                ))}
+                                {extra > 0 && (
+                                  <span className="roster-face roster-face--more">
+                                    +{extra}
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            <span className="match-roster-count">
+                              {players.length}
+                              <span className="match-roster-max">
+                                /{match.max_players}
+                              </span>
+                              <span className="visually-hidden"> players going</span>
+                            </span>
+                          </span>
+                        );
+                      })()}
                     </div>
+
+                    <span
+                      className="match-roster-bar"
+                      aria-hidden="true"
+                      style={{
+                        // Clamp so an over-subscribed match doesn't overflow.
+                        "--fill": `${Math.min(
+                          100,
+                          match.max_players > 0
+                            ? ((rosters.get(match.id)?.length ?? 0) /
+                                match.max_players) *
+                              100
+                            : 0,
+                        )}%`,
+                      } as React.CSSProperties}
+                    />
                   </Link>
                 </li>
               ))}

@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useFriendRequests } from '../context/FriendRequestsContext';
 import './Navbar.css';
 
 const LINKS = [
   { to: '/', label: 'Browse', end: true },
   { to: '/create', label: 'Create' },
+  { to: '/search', label: 'Search' },
   { to: '/profile', label: 'Profile' },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { requests } = useFriendRequests();
+  const pending = requests.length;
 
   return (
     <header className="navbar">
@@ -46,6 +50,16 @@ export function Navbar() {
               onClick={() => setOpen(false)}
             >
               {link.label}
+              {link.to === '/search' && pending > 0 && (
+                <>
+                  <span className="nav-badge" aria-hidden="true">
+                    {pending}
+                  </span>
+                  <span className="visually-hidden">
+                    , {pending} friend request{pending === 1 ? '' : 's'} waiting
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

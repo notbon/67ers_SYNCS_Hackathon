@@ -56,8 +56,17 @@
 }
 
 .hero h1 {
-  margin: 0 0 22px;
+  /* Inline backgrounds (.mark) are sized by the font's content area, not
+     line-height — anything under ~1.05 makes the orange block overlap the
+     line above. */
+  line-height: 1.1;
+  margin: 0 0 24px;
   max-width: 12ch;
+}
+
+/* Breathing room around the highlighted word without re-introducing overlap */
+.hero h1 .mark {
+  padding: 0.04em 0.14em;
 }
 
 .hero-sub {
@@ -75,9 +84,11 @@
 }
 
 /* ---------- Sport band (filter) ---------- */
+/* Chips carry --sport / --sport-tint, so each sport reads as its own thing
+   rather than six identical blocks. */
 
 .sport-band {
-  background: var(--accent);
+  background: var(--paper-2);
   border-bottom: 3px solid var(--ink);
 }
 
@@ -85,8 +96,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .sport-band-list {
@@ -96,11 +107,11 @@
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 10px;
   align-items: center;
 }
 
-/* Black on orange = 6.7:1 */
+/* Resting: sport colour on its own pale tint (well past 4.5:1) */
 .sport-chip {
   display: inline-flex;
   align-items: center;
@@ -109,12 +120,12 @@
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink);
-  background: transparent;
+  letter-spacing: 0.07em;
+  color: var(--sport);
+  background: var(--sport-tint);
   border: 2px solid transparent;
   border-radius: 0;
-  padding: 8px 12px;
+  padding: 9px 14px;
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
     transform 0.16s ease, box-shadow 0.16s ease;
@@ -125,7 +136,7 @@
 }
 
 .sport-chip:hover {
-  border-color: var(--ink);
+  border-color: var(--sport);
   transform: translateY(-2px);
 }
 
@@ -137,16 +148,13 @@
   transform: translateY(0);
 }
 
-/* Selected: inverted block so the active filter is unmistakable */
+/* Selected: filled in the sport colour. White on these tokens also clears
+   4.5:1 — that's the constraint each colour was picked against. */
 .sport-chip.is-selected {
-  background: var(--ink);
-  color: var(--accent);
-  border-color: var(--ink);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
-}
-
-.sport-chip.is-selected svg {
-  transform: scale(1.06);
+  background: var(--sport);
+  color: #ffffff;
+  border-color: var(--sport);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .sport-band-clear {
@@ -173,7 +181,7 @@
 /* ---------- Steps ---------- */
 
 .steps {
-  margin: 56px 0 64px;
+  margin: 48px 0 56px;
 }
 
 .steps-grid {
@@ -185,26 +193,24 @@
   gap: 20px;
 }
 
+/* Supporting copy, not content — a top rule instead of a heavy boxed card,
+   so the match list below stays the densest thing on the page. */
 .step {
-  border: 3px solid var(--ink);
-  background: var(--paper);
-  box-shadow: var(--shadow-hard);
-  padding: 24px 22px 26px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.5s ease;
-}
-
-.step:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 0 var(--accent);
+  border: none;
+  border-top: 3px solid var(--ink);
+  background: transparent;
+  box-shadow: none;
+  padding: 18px 0 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .step-n {
   display: block;
   font-family: var(--heading);
-  font-size: 40px;
+  font-size: 26px;
   line-height: 1;
   color: var(--accent);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .step h3 {
@@ -240,6 +246,101 @@
   }
 
   .step {
-    box-shadow: var(--shadow-hard-sm);
+    padding-top: 14px;
+  }
+}
+
+.nearby-map-section {
+  padding: 70px 0;
+}
+
+.nearby-map-section h2 {
+  margin: 0 0 6px;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.nearby-map-section > .wrap > p {
+  margin: 0 0 28px;
+  color: #5a5a5a;
+  font-size: 18px;
+}
+
+.nearby-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.4fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nearby-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1.5px solid #d8d8d8;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.nearby-card:hover {
+  transform: translateY(-2px);
+  border-color: #000;
+  box-shadow: 5px 5px 0 #000;
+}
+
+.nearby-card-sport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #5c5c5c;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nearby-card h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.nearby-card p {
+  margin: 0 0 14px;
+  color: #666;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.nearby-card strong {
+  font-size: 15px;
+}
+
+.nearby-map {
+  width: 100%;
+  height: 520px;
+  min-height: 520px;
+  border: 1.5px solid #000;
+}
+
+@media (max-width: 900px) {
+  .nearby-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .nearby-map {
+    height: 420px;
+    min-height: 420px;
   }
 }

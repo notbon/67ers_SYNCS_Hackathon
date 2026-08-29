@@ -7,6 +7,8 @@ import Profile from './pages/Profile';
 import Splash from './pages/Splash';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ResetPassword from './pages/ResetPassword';
+import NotFound from './pages/NotFound';
+import Search from './pages/Search';
 import './App.css';
 
 function AppRoutes() {
@@ -24,7 +26,9 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/create" element={<CreateMatch />} />
           <Route path="/matches/:id" element={<MatchDetails />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       )}
     </Routes>

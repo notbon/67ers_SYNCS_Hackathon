@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createMatch } from "../services/matchService";
+import { useAuth } from "../context/AuthContext";
 import "./CreateMatch.css";
 
 function CreateMatch() {
+  const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
+
   const [title, setTitle] = useState("");
   const [sport, setSport] = useState("");
   const [location, setLocation] = useState("");
@@ -92,6 +96,11 @@ async function initAutocomplete() {
       return;
     }
 
+    if (!userId) {
+      alert("Please sign in before creating a match.");
+      return;
+    }
+
     try {
       const data = await createMatch({
         title,
@@ -104,7 +113,9 @@ async function initAutocomplete() {
         max_players: Number(maxPlayers),
         skill_level: skillLevel,
         description,
-        created_by: null,
+        // Attribute the match to the signed-in host so it shows up in their
+        // "Matches You're Hosting" list (Profile) and carries a host badge.
+        created_by: userId,
       });
 
   console.log("Created match:", data);
