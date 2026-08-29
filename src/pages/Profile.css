@@ -9,6 +9,26 @@
   .profile-card h2 {
     margin: 0 0 18px;
   }
+
+  .profile-avatar-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .profile-avatar-block .profile-link-button {
+    margin-bottom: 0;
+  }
   
   .profile-link-button {
     background: none;

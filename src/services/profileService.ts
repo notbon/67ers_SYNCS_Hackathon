@@ -42,7 +42,7 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
-export type UpdateProfileInput = { name: string; skill_level: string | null };
+export type UpdateProfileInput = { name?: string; skill_level?: string | null; avatar_url?: string | null };
 
 export async function updateProfile(userId: string, updates: UpdateProfileInput) {
   const { data, error } = await supabase
@@ -115,3 +115,17 @@ export async function requestPasswordReset(email: string) {
   
     await signOut();
   }
+
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const ext = file.name.split(".").pop();
+  const path = `${userId}/avatar.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data.publicUrl;
+}
