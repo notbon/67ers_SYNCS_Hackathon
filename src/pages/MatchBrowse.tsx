@@ -8,6 +8,7 @@ import { fetchParticipants } from "../services/matchService";
 import type { MatchPlayer } from "../services/matchService";
 import Avatar from "../components/Avatar";
 import { sportVars } from "../lib/sportTheme";
+import { earliestTimeForDate, TIME_STEP_SECONDS } from "../lib/timeGrid";
 import { getHostToken, type PlayerToken } from "../lib/playerToken";
 import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
@@ -142,6 +143,9 @@ export default function MatchBrowse({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  // Bumped on focus to force a re-render so the time-filter `min` is recomputed
+  // from the current clock (a "Date from" change already re-renders).
+  const [, bumpTimeFloor] = useState(0);
   const [searchCoords, setSearchCoords] = useState<{
   lat: number;
   lng: number;
@@ -293,6 +297,12 @@ export default function MatchBrowse({
     if (sport === undefined) return;
     setFilters((prev) => (prev.sport === sport ? prev : { ...prev, sport }));
   }, [sport]);
+
+  // Earliest time the "Earliest / Latest time" filters will accept: "now"
+  // rounded up to the next 5 min when "Date from" is today or unset, else
+  // "00:00". Recomputed every render, so it stays fresh on date change and on
+  // focus (see bumpTimeFloor).
+  const minTime = earliestTimeForDate(filters.dateFrom);
 
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -497,7 +507,10 @@ export default function MatchBrowse({
           <span>Earliest time</span>
           <input
             type="time"
+            step={TIME_STEP_SECONDS}
+            min={minTime}
             value={filters.timeFrom}
+            onFocus={() => bumpTimeFloor((n) => n + 1)}
             onChange={(e) => updateFilter("timeFrom", e.target.value)}
           />
         </label>
@@ -506,7 +519,10 @@ export default function MatchBrowse({
           <span>Latest time</span>
           <input
             type="time"
+            step={TIME_STEP_SECONDS}
+            min={minTime}
             value={filters.timeTo}
+            onFocus={() => bumpTimeFloor((n) => n + 1)}
             onChange={(e) => updateFilter("timeTo", e.target.value)}
           />
         </label>

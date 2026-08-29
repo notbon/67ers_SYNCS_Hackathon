@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMatch } from "../services/matchService";
 import { useAuth } from "../context/AuthContext";
+import {
+  earliestTimeForDate,
+  TIME_STEP_SECONDS,
+  todayIso,
+} from "../lib/timeGrid";
 import "./CreateMatch.css";
 import { supabase } from "../lib/supabase";
 
@@ -15,6 +20,15 @@ function CreateMatch() {
   const [location, setLocation] = useState("");
   const [matchDate, setMatchDate] = useState("");
   const [matchTime, setMatchTime] = useState("");
+  // Bumping this forces a re-render so `min` on the time field is recomputed
+  // from the current clock — used on focus, so a form left open past the
+  // rounded slot stops offering a time that's now in the past. (A date change
+  // already re-renders via `matchDate`.)
+  const [, bumpTimeFloor] = useState(0);
+
+  // Earliest selectable time: "now" rounded up to the next 5 min when the match
+  // is today (or no date picked yet), otherwise "00:00".
+  const minTime = earliestTimeForDate(matchDate);
   const [maxPlayers, setMaxPlayers] = useState("");
   const [skillLevel, setSkillLevel] = useState("");
   const [description, setDescription] = useState("");
@@ -213,6 +227,7 @@ async function initAutocomplete() {
         <input
           required
           type="date"
+          min={todayIso()}
           value={matchDate}
           onChange={(e) => setMatchDate(e.target.value)}
         />
@@ -220,7 +235,10 @@ async function initAutocomplete() {
         <input
           required
           type="time"
+          step={TIME_STEP_SECONDS}
+          min={minTime}
           value={matchTime}
+          onFocus={() => bumpTimeFloor((n) => n + 1)}
           onChange={(e) => setMatchTime(e.target.value)}
         />
 
