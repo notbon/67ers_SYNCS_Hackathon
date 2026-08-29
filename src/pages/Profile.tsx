@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
-import { signIn, signOut, signUp } from "../services/profileService";
-
+// TODO (Person 4 — Account/Profile):
+// Build sign-up/login UI and profile editing here, plus lists of the
+// current user's joined and created matches. Auth helpers already live in
+// src/services/profileService.ts.
 export default function Profile() {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -92,10 +90,14 @@ export default function Profile() {
   }
 
   return (
-    <section className="page">
-      <h1>Your Profile</h1>
-      <p>Logged in as {session.user.email}</p>
-      <button type="button" onClick={() => signOut()}>Sign Out</button>
+    <section className="page page-narrow">
+      <p className="eyebrow">Your account</p>
+      <h1>Profile</h1>
+      <p className="page-subtitle">
+        Sign-up, login and profile details go here, along with the matches
+        you've joined and created.
+      </p>
+      <p className="placeholder-note">This page is still being built.</p>
     </section>
   );
 }
