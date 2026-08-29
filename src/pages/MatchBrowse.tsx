@@ -6,7 +6,7 @@ import HostBadge from "../components/HostBadge";
 import { fetchHostsByToken } from "../services/hostService";
 import { fetchParticipants } from "../services/matchService";
 import type { MatchPlayer } from "../services/matchService";
-import { avatarColour, initials } from "../lib/avatar";
+import Avatar from "../components/Avatar";
 import { sportVars } from "../lib/sportTheme";
 import { getHostToken, type PlayerToken } from "../lib/playerToken";
 import type { Match, MatchHost } from "../types";
@@ -597,14 +597,14 @@ export default function MatchBrowse({
                             {players.length > 0 && (
                               <span className="roster-faces" aria-hidden="true">
                                 {shown.map((p) => (
-                                  <span
+                                  <Avatar
                                     key={p.id}
+                                    id={p.id}
+                                    name={p.name}
+                                    url={p.avatar_url}
+                                    size={28}
                                     className="roster-face"
-                                    style={{ background: avatarColour(p.id) }}
-                                    title={p.name}
-                                  >
-                                    {initials(p.name)}
-                                  </span>
+                                  />
                                 ))}
                                 {extra > 0 && (
                                   <span className="roster-face roster-face--more">

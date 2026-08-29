@@ -47,7 +47,7 @@ export async function fetchMatches(): Promise<Match[]> {
   return (data ?? []) as Match[];
 }
 
-export type MatchPlayer = { id: string; name: string };
+export type MatchPlayer = { id: string; name: string; avatar_url?: string | null };
 
 /**
  * Who has signed up to each of the given matches, batched into one round trip.
@@ -64,7 +64,7 @@ export async function fetchParticipants(
 
   const { data, error } = await supabase
     .from("match_participants")
-    .select("match_id, user:users ( id, name )")
+    .select("match_id, user:users ( id, name, avatar_url )")
     .in("match_id", matchIds);
 
   if (error) {

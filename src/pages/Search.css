@@ -99,22 +99,7 @@
   }
 }
 
-/* White on these palette colours clears 4.5:1 */
-.search-avatar {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  font-family: var(--sans);
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1;
-  color: #ffffff;
-  text-transform: uppercase;
-}
+/* Shared look lives in Avatar.css; nothing extra needed at this size. */
 
 .search-name {
   flex: 1;

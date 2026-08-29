@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useFriendRequests } from "../context/FriendRequestsContext";
 import {
@@ -376,17 +377,26 @@ export function ChatWidget() {
                   return (
                     <article
                       key={m.id}
-                      className={`chat-msg ${mine ? "is-mine" : ""}`}
+                      className={`chat-row ${mine ? "is-mine" : ""}`}
                     >
-                      <header className="chat-msg-head">
-                        <span className="chat-msg-name">
-                          {mine ? "You" : m.sender_name}
-                        </span>
-                        <time className="chat-msg-time" dateTime={m.created_at}>
-                          {timeOf(m.created_at)}
-                        </time>
-                      </header>
-                      <p className="chat-msg-body">{m.body}</p>
+                      <Avatar
+                        id={m.sender_id}
+                        name={m.sender_name}
+                        url={m.sender_avatar}
+                        size={30}
+                        className="chat-msg-avatar"
+                      />
+                      <div className="chat-msg">
+                        <header className="chat-msg-head">
+                          <span className="chat-msg-name">
+                            {mine ? "You" : m.sender_name}
+                          </span>
+                          <time className="chat-msg-time" dateTime={m.created_at}>
+                            {timeOf(m.created_at)}
+                          </time>
+                        </header>
+                        <p className="chat-msg-body">{m.body}</p>
+                      </div>
                     </article>
                   );
                 })}
@@ -444,6 +454,7 @@ export function ChatWidget() {
                         const pendingId = outgoing.get(p.id);
                         return (
                           <li key={p.id} className="chat-request">
+                            <Avatar id={p.id} name={p.name} url={p.avatar_url} size={30} />
                             <span className="chat-list-name">{p.name}</span>
                             {isFriend ? (
                               <span className="chat-tag">Friends</span>
@@ -487,6 +498,12 @@ export function ChatWidget() {
                     <ul className="chat-list" role="list">
                       {requests.map((r) => (
                         <li key={r.id} className="chat-request">
+                          <Avatar
+                            id={r.requester.id}
+                            name={r.requester.name}
+                            url={r.requester.avatar_url}
+                            size={30}
+                          />
                           <span className="chat-list-name">
                             {r.requester.name}
                           </span>
@@ -530,6 +547,7 @@ export function ChatWidget() {
                           setThreadTitle(p.name);
                         }}
                       >
+                        <Avatar id={p.id} name={p.name} url={p.avatar_url} size={30} />
                         <span className="chat-list-name">
                           {p.name}
                           {friendIds.has(p.id) && (

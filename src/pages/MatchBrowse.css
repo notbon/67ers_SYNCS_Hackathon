@@ -305,20 +305,10 @@
 }
 
 .roster-face {
-  width: 28px;
-  height: 28px;
   margin-left: -8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--paper);
+  /* White ring so overlapping faces stay separable, dark hairline for edge */
+  border-color: var(--paper);
   outline: 1px solid var(--ink);
-  font-family: var(--sans);
-  font-size: 10.5px;
-  font-weight: 800;
-  line-height: 1;
-  color: #ffffff;
-  text-transform: uppercase;
 }
 
 .roster-face:first-child {

@@ -176,13 +176,30 @@
 
 /* ---------- Messages ---------- */
 
+/* Row = sender's face + the bubble; mirrored for your own messages */
+.chat-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 90%;
+  align-self: flex-start;
+  animation: msgIn 0.24s ease backwards;
+}
+
+.chat-row.is-mine {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-msg-avatar {
+  margin-bottom: 2px;
+}
+
 .chat-msg {
-  max-width: 85%;
+  min-width: 0;
   padding: 9px 12px;
   border: 2px solid var(--ink);
   background: var(--paper);
-  align-self: flex-start;
-  animation: msgIn 0.24s ease backwards;
 }
 
 @keyframes msgIn {
@@ -196,8 +213,7 @@
   }
 }
 
-.chat-msg.is-mine {
-  align-self: flex-end;
+.chat-row.is-mine .chat-msg {
   background: var(--accent);
 }
 
@@ -222,7 +238,7 @@
   color: #55555c;
 }
 
-.chat-msg.is-mine .chat-msg-time {
+.chat-row.is-mine .chat-msg-time {
   color: #3d2410;
 }
 
@@ -264,7 +280,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   padding: 13px 14px;
   text-align: left;
@@ -281,9 +297,13 @@
 }
 
 .chat-list-name {
+  flex: 1;
+  min-width: 0;
   font-size: 14.5px;
   font-weight: 700;
   color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-list-meta {
