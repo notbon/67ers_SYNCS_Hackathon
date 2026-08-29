@@ -9,6 +9,7 @@ import SportIcon from "../components/SportIcon";
 import useReveal from "../hooks/useReveal";
 import { fetchMatches } from "../services/matchService";
 import type { Match } from "../types";
+import { sportVars } from "../lib/sportTheme";
 import "./Home.css";
 
 // Keep in step with the options in CreateMatch.tsx and MatchBrowse.tsx.
@@ -268,6 +269,7 @@ export default function Home() {
                   <button
                     type="button"
                     className={`sport-chip ${selected ? "is-selected" : ""}`}
+                    style={sportVars(name)}
                     aria-pressed={selected}
                     onClick={() => pickSport(name)}
                   >

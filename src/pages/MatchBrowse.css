@@ -5,11 +5,68 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px 18px;
   align-items: end;
-  padding: 22px;
+  padding: 20px;
   margin-bottom: 32px;
-  border: 3px solid var(--ink);
+  /* Lighter than the cards it sits above — it's a control strip, not content */
+  border: 2px solid var(--border-soft);
   background: var(--paper-2);
-  box-shadow: var(--shadow-hard);
+}
+
+/* Collapsed-by-default group: skill, dates and times */
+.match-browse .filters-advanced {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px 18px;
+  align-items: end;
+  padding-top: 18px;
+  border-top: 2px solid var(--border-soft);
+}
+
+.match-browse .filters-advanced[hidden] {
+  display: none;
+}
+
+.filters-advanced-toggle {
+  grid-column: 1 / -1;
+}
+
+.filters-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.filters-more:hover {
+  color: var(--accent-ink);
+  border-bottom-color: var(--accent);
+}
+
+/* Black on orange = 6.7:1 */
+.filters-more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  background: var(--accent);
+  color: var(--ink);
+  border: 2px solid var(--ink);
 }
 
 .match-browse .filter {
@@ -62,6 +119,11 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.match-browse .filters-clear {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
 .match-browse .filters-clear:hover:not(:disabled) {
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--ink);
@@ -102,110 +164,200 @@
 }
 
 /* ---------- Cards ---------- */
+/* Each card carries --sport / --sport-tint from sportTheme.ts, so the sport
+   drives the accent instead of every card looking identical. */
 
 .match-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 24px;
 }
 
 .match-card {
-  display: block;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   box-sizing: border-box;
-  padding: 22px;
-  border: 3px solid var(--ink);
+  padding: 26px 24px 22px;
+  border: 2px solid var(--border-soft);
   border-radius: 0;
   background: var(--paper);
   text-decoration: none;
   color: var(--text);
-  box-shadow: var(--shadow-hard-sm);
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  overflow: hidden;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+/* Sport colour band along the top edge */
+.match-card-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7px;
+  background: var(--sport);
 }
 
 .match-card:hover {
   transform: translate(-3px, -3px);
-  box-shadow: 7px 7px 0 var(--accent);
+  border-color: var(--sport);
+  box-shadow: 7px 7px 0 var(--sport);
 }
 
-.match-card-head {
+/* ---------- Card top row ---------- */
+
+.match-card-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 14px;
   margin-bottom: 14px;
-  border-bottom: 2px solid var(--ink);
 }
 
-.match-card-head h3 {
-  font-family: var(--sans);
-  font-size: 19px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: var(--text-h);
-  margin: 0;
-}
-
-/* Black on orange = 6.7:1 */
+/* Dark sport ink on its own pale tint — comfortably past 4.5:1 */
 .match-card-sport {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 6px 10px;
-  border: 2px solid var(--ink);
+  padding: 6px 11px;
   border-radius: 0;
-  background: var(--accent);
-  color: var(--ink);
+  background: var(--sport-tint);
+  color: var(--sport);
 }
 
-.match-card-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 14px 18px;
-  margin: 0;
-}
-
-.match-card-meta div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.match-card-meta dt {
+.match-card-skill {
   font-size: 10.5px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   color: #6a6a70;
+  text-align: right;
 }
 
-.match-card-meta dd {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+/* ---------- Title & facts ---------- */
+
+.match-card h3 {
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
   color: var(--text-h);
+  margin: 0 0 12px;
+  transition: color 0.15s ease;
+}
+
+.match-card:hover h3 {
+  color: var(--sport);
+}
+
+.match-card-facts {
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.match-card-facts dd {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 .match-card-approx {
-  font-size: 13px;
   font-weight: 700;
-  color: var(--accent-ink);
+  color: var(--sport);
 }
 
+/* ---------- Footer: who's hosting, who's going ---------- */
+
 .match-card-foot {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.match-roster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  line-height: 1.05;
+}
+
+/* Overlapping avatars of who's actually going */
+.roster-faces {
+  display: inline-flex;
+  align-items: center;
+}
+
+.roster-face {
+  width: 28px;
+  height: 28px;
+  margin-left: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--paper);
+  outline: 1px solid var(--ink);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.roster-face:first-child {
+  margin-left: 0;
+}
+
+.roster-face--more {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.match-roster-count {
+  font-family: var(--heading);
+  font-size: 22px;
+  color: var(--sport);
+}
+
+.match-roster-max {
+  font-size: 15px;
+  color: #8a8a90;
+}
+
+
+
+/* Thin fill bar pinned to the bottom edge showing how full the roster is */
+.match-roster-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 4px;
+  background: var(--border-soft);
+}
+
+.match-roster-bar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: var(--fill, 0%);
+  background: var(--sport);
+  transition: width 0.3s ease;
 }
 
 @media (max-width: 720px) {
@@ -216,6 +368,11 @@
 
   .match-list {
     grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .match-card {
+    padding: 22px 18px 20px;
   }
 }
 
@@ -244,14 +401,6 @@
 
 .match-card:hover .match-card-sport svg {
   transform: scale(1.16) rotate(-8deg);
-}
-
-.match-card-head h3 {
-  transition: color 0.15s ease;
-}
-
-.match-card:hover .match-card-head h3 {
-  color: var(--accent-ink);
 }
 
 .match-browse .filter input,

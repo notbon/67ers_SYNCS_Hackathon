@@ -78,3 +78,37 @@ export async function fetchJoinedMatches(userId: string): Promise<Match[]> {
     .map((row) => row.matches as unknown as Match | null)
     .filter((m): m is Match => Boolean(m));
 }
+
+export async function requestPasswordReset(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  }
+  
+  export async function updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+
+  export async function deleteAccount(userId: string) {
+    const { error: matchesError } = await supabase
+      .from("matches")
+      .delete()
+      .eq("created_by", userId);
+    if (matchesError) throw matchesError;
+  
+    const { error: participantError } = await supabase
+      .from("match_participants")
+      .delete()
+      .eq("user_id", userId);
+    if (participantError) throw participantError;
+  
+    const { error: userError } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", userId);
+    if (userError) throw userError;
+  
+    await signOut();
+  }
