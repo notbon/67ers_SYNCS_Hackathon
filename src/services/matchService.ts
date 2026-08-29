@@ -263,3 +263,90 @@ export async function fetchBadgeCounts(userId: string): Promise<Record<string, n
   return counts;
 }
 
+export type TeamAssignment = Record<string, "A" | "B">; // user_id -> team
+
+export async function fetchTeams(matchId: string): Promise<TeamAssignment> {
+  const { data, error } = await supabase
+    .from("match_participants")
+    .select("user_id, team")
+    .eq("match_id", matchId)
+    .eq("status", "approved");
+
+  if (error) throw error;
+
+  const map: TeamAssignment = {};
+  (data ?? []).forEach((row) => {
+    if (row.team === "A" || row.team === "B") map[row.user_id] = row.team;
+  });
+  return map;
+}
+
+export async function setPlayerTeam(matchId: string, userId: string, team: "A" | "B") {
+  const { error } = await supabase
+    .from("match_participants")
+    .update({ team })
+    .eq("match_id", matchId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+// Randomly, evenly splits every approved participant into Team A / Team B.
+// Safe to call again later — it just reshuffles everyone.
+export async function autoAssignTeams(matchId: string, participantIds: string[]) {
+  const shuffled = [...participantIds].sort(() => Math.random() - 0.5);
+
+  await Promise.all(
+    shuffled.map((userId, i) =>
+      supabase
+        .from("match_participants")
+        .update({ team: i % 2 === 0 ? "A" : "B" })
+        .eq("match_id", matchId)
+        .eq("user_id", userId)
+        .then(({ error }) => { if (error) throw error; })
+    )
+  );
+}
+
+export type WinLossRecord = { wins: number; losses: number; draws: number };
+
+// Derived entirely from match_participants.team + match_scores — no
+// separate stats table needed, so it can never drift out of sync.
+export async function fetchWinLossRecord(userId: string): Promise<WinLossRecord> {
+  const { data, error } = await supabase
+    .from("match_participants")
+    .select("team, matches(match_scores(team_a_score, team_b_score))")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  if (error) throw error;
+
+  let wins = 0, losses = 0, draws = 0;
+
+  type ScoreRow = { team_a_score: number | null; team_b_score: number | null };
+  type Row = {
+    team: string | null;
+    matches: { match_scores: ScoreRow | ScoreRow[] | null } | null;
+  };
+
+  ((data ?? []) as unknown as Row[]).forEach((row) => {
+    if (!row.team) return;
+
+    const raw = row.matches?.match_scores;
+    const score = Array.isArray(raw) ? raw[0] : raw;
+    if (!score || score.team_a_score == null || score.team_b_score == null) return;
+
+    const { team_a_score, team_b_score } = score;
+    if (team_a_score === team_b_score) {
+      draws++;
+    } else if (
+      (row.team === "A" && team_a_score > team_b_score) ||
+      (row.team === "B" && team_b_score > team_a_score)
+    ) {
+      wins++;
+    } else {
+      losses++;
+    }
+  });
+
+  return { wins, losses, draws };
+}
