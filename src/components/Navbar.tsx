@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom';
 import './Navbar.css';
 
 const LINKS = [
-  { to: '/', label: 'Browse Matches', end: true },
-  { to: '/create', label: 'Create Match' },
+  { to: '/', label: 'Browse', end: true },
+  { to: '/create', label: 'Create' },
   { to: '/profile', label: 'Profile' },
 ];
 
@@ -13,9 +13,10 @@ export function Navbar() {
 
   return (
     <header className="navbar">
-      <div className="navbar-inner">
+      <div className="navbar-inner wrap">
         <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
-          MatchUp
+          <span className="brand-block" aria-hidden="true" />
+          Match<span className="brand-accent">Up</span>
         </NavLink>
 
         <button
@@ -23,6 +24,7 @@ export function Navbar() {
           className="nav-toggle"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
+          aria-controls="primary-nav"
           onClick={() => setOpen((o) => !o)}
         >
           <span />
@@ -30,7 +32,11 @@ export function Navbar() {
           <span />
         </button>
 
-        <nav className={`nav-links ${open ? 'open' : ''}`}>
+        <nav
+          id="primary-nav"
+          aria-label="Primary"
+          className={`nav-links ${open ? 'open' : ''}`}
+        >
           {LINKS.map((link) => (
             <NavLink
               key={link.to}
