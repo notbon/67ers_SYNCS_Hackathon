@@ -8,6 +8,24 @@ export type Profile = {
   email: string;
   skill_level: string | null;
   avatar_url: string | null;
+  bio: string | null;
+};
+
+// A player as shown on their public profile page (/players/:id). Same row as
+// Profile minus the private email.
+export type PublicProfile = {
+  id: string;
+  name: string;
+  skill_level: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+};
+
+// Aggregate counts shown on the public player profile.
+export type PlayerStats = {
+  gamesPlayed: number; // approved participations
+  gamesWon: number; // matches whose final score went their team's way
+  noShows: number; // matches they were marked absent for
 };
 
 export interface Match {
