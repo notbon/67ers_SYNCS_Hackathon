@@ -53,8 +53,8 @@
 .create-match-form input:focus,
 .create-match-form select:focus,
 .create-match-form textarea:focus {
-  border-color: #555;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .create-match-form textarea {
@@ -68,7 +68,7 @@
   margin-top: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #222;
+  background-color: var(--accent);
   color: white;
   font-size: 16px;
   font-weight: 600;
