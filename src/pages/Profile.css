@@ -1,0 +1,115 @@
+.profile-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  
+  .profile-card h2 {
+    margin: 0 0 18px;
+  }
+  
+  .profile-link-button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 20px;
+  }
+  
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  
+  .profile-form input,
+  .profile-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .profile-form input:focus,
+  .profile-form select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  
+  .profile-form input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .profile-button {
+    padding: 13px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  
+  .profile-button:hover {
+    opacity: 0.9;
+  }
+  
+  .profile-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .profile-error {
+    color: #d13c3c;
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .profile-notice {
+    color: var(--accent);
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .profile-match-row {
+    display: block;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  
+  .profile-match-row:hover {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+  }
+  
+  .profile-match-row p {
+    margin: 0;
+    color: var(--text-h);
+  }
+  
+  @media (max-width: 600px) {
+    .profile-card {
+      padding: 20px;
+    }
+  }
+  
