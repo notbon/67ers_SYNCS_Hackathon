@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   fetchAttendance,
   setAttendance,
@@ -24,19 +25,25 @@ import "./MatchReport.css";
 
 type Props = {
   matchId: string;
-  isHost: boolean;
+  /** Host: can submit the report (teams, score, attendance). */
+  canManage: boolean;
+  /** Host or approved player: can endorse / report / give feedback. */
+  canParticipate: boolean;
   currentUserId: string | null;
   participants: MatchPlayer[];
 };
 
 export default function MatchReport({
   matchId,
-  isHost,
+  canManage,
+  canParticipate,
   currentUserId,
   participants,
 }: Props) {
   const [attendance, setAttendanceMap] = useState<AttendanceMap>({});
-  const [score, setScoreState] = useState<MatchScore | null>(null);
+  // Score value isn't rendered (host edits via the inputs below); the setter is
+  // kept for the optimistic update after saving.
+  const [, setScoreState] = useState<MatchScore | null>(null);
   const [teamAInput, setTeamAInput] = useState("");
   const [teamBInput, setTeamBInput] = useState("");
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
@@ -58,6 +65,7 @@ export default function MatchReport({
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +93,7 @@ export default function MatchReport({
         // the host is viewing, auto-split evenly right away; the host can
         // still adjust individuals or reshuffle afterward.
         if (
-          isHost &&
+          canManage &&
           Object.keys(tm).length === 0 &&
           participants.length > 0
         ) {
@@ -204,146 +212,120 @@ export default function MatchReport({
     return participants.find((p) => p.id === userId)?.name || "Player";
   }
 
+  const others = participants.filter((p) => p.id !== currentUserId);
+
   if (loading) return <p className="match-report-loading">Loading report...</p>;
 
   return (
     <div className="match-report">
-      <h2>Match Report</h2>
+      <h2>{canManage ? "Match Report" : "After the Match"}</h2>
 
-      {/* TEAMS */}
-      <div className="report-section">
-        <div className="teams-heading">
-          <h3>Teams</h3>
-          {isHost && (
-            <button
-              type="button"
-              className="team-reshuffle-button"
-              onClick={handleReshuffle}
-              disabled={teamsSaving || participants.length === 0}
-            >
-              {teamsSaving ? "Assigning..." : "Reshuffle Teams"}
-            </button>
-          )}
-        </div>
+      {/* TEAMS / SCORE / ATTENDANCE — host only */}
+      {canManage && (
+        <>
+          <div className="report-section">
+            <div className="teams-heading">
+              <h3>Teams</h3>
+              <button
+                type="button"
+                className="team-reshuffle-button"
+                onClick={handleReshuffle}
+                disabled={teamsSaving || participants.length === 0}
+              >
+                {teamsSaving ? "Assigning..." : "Reshuffle Teams"}
+              </button>
+            </div>
 
-        {teamsError && <p className="report-error">{teamsError}</p>}
+            {teamsError && <p className="report-error">{teamsError}</p>}
 
-        {participants.length === 0 ? (
-          <p className="report-empty">No players to assign yet.</p>
-        ) : (
-          <ul className="team-roster">
-            {participants.map((p) => (
-              <li key={p.id} className="team-roster-row">
-                <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
-                <span className="team-roster-name">{p.name}</span>
-                {isHost ? (
-                  <select
-                    value={teams[p.id] ?? ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "A" || value === "B") handleTeamChange(p.id, value);
-                    }}
-                    disabled={teamsSaving}
-                  >
-                    <option value="">Unassigned</option>
-                    <option value="A">Team A</option>
-                    <option value="B">Team B</option>
-                  </select>
-                ) : (
-                  <span className={`team-badge team-badge--${teams[p.id] ?? "none"}`}>
-                    {teams[p.id] ? `Team ${teams[p.id]}` : "Unassigned"}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* SCORE */}
-      <div className="report-section">
-        <h3>Score</h3>
-        {isHost ? (
-          <div className="score-editor">
-            <span className="score-team-label">Team A</span>
-            <input
-              type="number"
-              value={teamAInput}
-              onChange={(e) => setTeamAInput(e.target.value)}
-              placeholder="0"
-            />
-            <span className="score-sep">–</span>
-            <input
-              type="number"
-              value={teamBInput}
-              onChange={(e) => setTeamBInput(e.target.value)}
-              placeholder="0"
-            />
-            <span className="score-team-label">Team B</span>
-            <button onClick={handleScoreSave} disabled={saving}>
-              {saving ? "Saving..." : "Save Score"}
-            </button>
+            {participants.length === 0 ? (
+              <p className="report-empty">No players to assign yet.</p>
+            ) : (
+              <ul className="team-roster">
+                {participants.map((p) => (
+                  <li key={p.id} className="team-roster-row">
+                    <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
+                    <Link to={`/players/${p.id}`} className="team-roster-name">
+                      {p.name}
+                    </Link>
+                    <select
+                      value={teams[p.id] ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "A" || value === "B") handleTeamChange(p.id, value);
+                      }}
+                      disabled={teamsSaving}
+                    >
+                      <option value="">Unassigned</option>
+                      <option value="A">Team A</option>
+                      <option value="B">Team B</option>
+                    </select>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        ) : score?.team_a_score != null ? (
-          <p className="score-display">
-            Team A {score.team_a_score} – {score.team_b_score} Team B
-          </p>
-        ) : (
-          <p className="report-empty">Score not yet recorded.</p>
-        )}
-      </div>
 
-      {/* ATTENDANCE */}
-      <div className="report-section">
-        <h3>Attendance</h3>
-        {isHost ? (
-          <ul className="attendance-list">
-            {participants.map((p) => (
-              <li key={p.id} className="attendance-row">
-                <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
-                <span>{p.name}</span>
-                <label className="attendance-toggle">
-                  <input
-                    type="checkbox"
-                    checked={attendance[p.id] ?? false}
-                    onChange={(e) => handleAttendanceToggle(p.id, e.target.checked)}
-                  />
-                  Attended
-                </label>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <ul className="attendance-list attendance-list--readonly">
-            {participants.map((p) => (
-              <li key={p.id} className="attendance-row">
-                <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
-                <span>{p.name}</span>
-                <span className={attendance[p.id] ? "attended-yes" : "attended-no"}>
-                  {attendance[p.id] ? "Attended" : "Not marked"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          <div className="report-section">
+            <h3>Score</h3>
+            <div className="score-editor">
+              <span className="score-team-label">Team A</span>
+              <input
+                type="number"
+                value={teamAInput}
+                onChange={(e) => setTeamAInput(e.target.value)}
+                placeholder="0"
+              />
+              <span className="score-sep">–</span>
+              <input
+                type="number"
+                value={teamBInput}
+                onChange={(e) => setTeamBInput(e.target.value)}
+                placeholder="0"
+              />
+              <span className="score-team-label">Team B</span>
+              <button onClick={handleScoreSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Score"}
+              </button>
+            </div>
+          </div>
 
-      {/* ENDORSEMENTS */}
+          <div className="report-section">
+            <h3>Attendance</h3>
+            <ul className="attendance-list">
+              {participants.map((p) => (
+                <li key={p.id} className="attendance-row">
+                  <Avatar id={p.id} name={p.name} url={p.avatar_url} size={32} />
+                  <Link to={`/players/${p.id}`}>{p.name}</Link>
+                  <label className="attendance-toggle">
+                    <input
+                      type="checkbox"
+                      checked={attendance[p.id] ?? false}
+                      onChange={(e) => handleAttendanceToggle(p.id, e.target.checked)}
+                    />
+                    Attended
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* ENDORSEMENTS — every player in the match */}
       <div className="report-section">
         <h3>Endorsements</h3>
 
-        {currentUserId && (
+        {canParticipate && (
           <div className="endorse-form">
             <select
               value={endorseTarget}
               onChange={(e) => { setEndorseTarget(e.target.value); setEndorseSuccess(false); }}
             >
               <option value="">Choose a player</option>
-              {participants
-                .filter((p) => p.id !== currentUserId)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
+              {others.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </select>
             <select
               value={endorseBadge}
@@ -371,7 +353,7 @@ export default function MatchReport({
               if (badges.length === 0) return null;
               return (
                 <li key={p.id} className="endorsement-row">
-                  <span className="endorsement-name">{p.name}</span>
+                  <Link to={`/players/${p.id}`} className="endorsement-name">{p.name}</Link>
                   <span className="endorsement-badges">
                     {badges.map((b) => (
                       <span key={b.id} className="badge-pill">{b.badge}</span>
@@ -384,11 +366,13 @@ export default function MatchReport({
         )}
       </div>
 
-      {/* FEEDBACK */}
+      {/* Player reporting lives on the "Players Joined" roster (MatchDetails). */}
+
+      {/* FEEDBACK — every player in the match */}
       <div className="report-section">
         <h3>Feedback</h3>
 
-        {currentUserId && (
+        {canParticipate && (
           <div className="feedback-form">
             <textarea
               value={comment}
@@ -410,7 +394,9 @@ export default function MatchReport({
           <ul className="feedback-list">
             {feedback.map((f) => (
               <li key={f.id} className="feedback-row">
-                <span className="feedback-author">{nameFor(f.user_id)}</span>
+                <Link to={`/players/${f.user_id}`} className="feedback-author">
+                  {nameFor(f.user_id)}
+                </Link>
                 <p>{f.comment}</p>
               </li>
             ))}
