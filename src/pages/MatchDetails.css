@@ -1,28 +1,18 @@
 .match-details-page {
   min-height: 100vh;
-
   display: flex;
-
   justify-content: center;
-
   align-items: flex-start;
-
   padding: 60px 20px;
-
   background-color: #f5f6f8;
 }
 
 .match-details-card {
   width: 100%;
-
   max-width: 650px;
-
   background-color: white;
-
   padding: 36px;
-
   border-radius: 16px;
-
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -32,119 +22,232 @@
 
 .match-details-header h1 {
   margin: 6px 0 12px;
-
   font-size: 32px;
-
   color: #222;
 }
 
 .match-sport {
   margin: 0;
-
   font-size: 14px;
-
   font-weight: 600;
-
   text-transform: uppercase;
-
   color: #666;
 }
 
 .skill-level {
   display: inline-block;
-
   padding: 6px 10px;
-
   border-radius: 6px;
-
   background-color: #f0f1f3;
-
   color: #444;
-
   font-size: 13px;
-
   font-weight: 600;
 }
 
 .match-info {
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
   gap: 16px;
-
   margin-bottom: 30px;
 }
 
 .match-info-item {
   display: flex;
-
   flex-direction: column;
-
   padding: 16px;
-
   background-color: #f7f8fa;
-
   border-radius: 8px;
-
   color: #222;
 }
 
 .info-label {
   margin-bottom: 5px;
-
   font-size: 12px;
-
   font-weight: 600;
-
   text-transform: uppercase;
-
   color: #777;
 }
 
+/* Players joined section */
+
+.match-participants {
+  padding: 24px 0;
+  margin-bottom: 28px;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.participants-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.participants-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #222;
+}
+
+.participants-count {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background-color: #f0f1f3;
+  color: #555;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.participant-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background-color: #f7f8fa;
+  border: 1px solid #eceef0;
+  border-radius: 10px;
+}
+
+.participant-photo {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #e4e5e7;
+}
+
+.participant-avatar {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #222;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.participant-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.participant-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  color: #222;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.participant-name span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-avatar-image {
+  flex-shrink: 0;
+}
+
+.participant-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background-color: #f7f8fa;
+  border: 1px solid #eceef0;
+  border-radius: 10px;
+}
+
+.participant-details p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 13px;
+}
+
+.you-label {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background-color: #222;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.participants-empty {
+  margin: 0;
+  padding: 14px;
+  background-color: #f7f8fa;
+  border-radius: 8px;
+  color: #777;
+  font-size: 14px;
+}
+
+/* Match description */
+
 .match-description {
   padding-top: 24px;
-
   margin-bottom: 28px;
-
   border-top: 1px solid #e5e5e5;
 }
 
 .match-description h2 {
   margin: 0 0 10px;
-
   font-size: 20px;
-
   color: #222;
 }
 
 .match-description p {
   margin: 0;
-
   line-height: 1.6;
-
   color: #555;
 }
+
+/* Pending request */
+
+.pending-message {
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background-color: #f0f1f3;
+  color: #555;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Join / leave buttons */
 
 .join-match-button,
 .leave-match-button {
   width: 100%;
-
   padding: 14px;
-
   border: none;
-
   border-radius: 8px;
-
   color: white;
-
   font-size: 16px;
-
   font-weight: 600;
-
   cursor: pointer;
-
-  transition: transform 0.15s, opacity 0.15s;
+  transition:
+    transform 0.15s,
+    opacity 0.15s;
 }
 
 .join-match-button {
@@ -158,16 +261,18 @@
 .join-match-button:hover,
 .leave-match-button:hover {
   opacity: 0.9;
-
   transform: translateY(-1px);
+}
+
+.join-match-button:active,
+.leave-match-button:active {
+  transform: translateY(0);
 }
 
 .join-match-button:disabled,
 .leave-match-button:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
-
   transform: none;
 }
 
@@ -186,5 +291,13 @@
 
   .match-info {
     grid-template-columns: 1fr;
+  }
+
+  .participant-list {
+    grid-template-columns: 1fr;
+  }
+
+  .participants-heading {
+    align-items: flex-start;
   }
 }
