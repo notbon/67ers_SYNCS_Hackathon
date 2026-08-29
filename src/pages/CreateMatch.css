@@ -99,3 +99,16 @@
     box-shadow: var(--shadow-hard-sm);
   }
 }
+
+gmp-place-autocomplete {
+  width: 100%;
+  background-color: white;
+  color: #222;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+}
+
+gmp-place-autocomplete::part(input) {
+  background-color: white;
+  color: #222;
+}
