@@ -1,0 +1,150 @@
+/* ---------- Hero ---------- */
+
+.hero {
+  margin-top: -40px;
+  border-bottom: 3px solid var(--ink);
+  background-color: var(--ink);
+  /* Subtle diagonal texture so the black block isn't dead flat */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.028) 0 2px,
+    transparent 2px 14px
+  );
+  padding: 84px 0 76px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Orange corner block, purely decorative */
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -70px;
+  bottom: -70px;
+  width: 260px;
+  height: 260px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+}
+
+.hero h1 {
+  margin: 0 0 22px;
+  max-width: 12ch;
+}
+
+.hero-sub {
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 52ch;
+  margin: 0 0 32px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Sport band ---------- */
+
+.sport-band {
+  background: var(--accent);
+  border-bottom: 3px solid var(--ink);
+}
+
+.sport-band-inner {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 30px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+/* Black on orange = 6.7:1 */
+.sport-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Steps ---------- */
+
+.steps {
+  margin: 56px 0 64px;
+}
+
+.steps-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.step {
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: var(--shadow-hard);
+  padding: 24px 22px 26px;
+}
+
+.step-n {
+  display: block;
+  font-family: var(--heading);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.step h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.step p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .hero {
+    margin-top: -28px;
+    padding: 56px 0 52px;
+  }
+
+  .hero::after {
+    width: 170px;
+    height: 170px;
+    right: -55px;
+    bottom: -55px;
+  }
+
+  .steps {
+    margin: 40px 0 48px;
+  }
+
+  .step {
+    box-shadow: var(--shadow-hard-sm);
+  }
+}

@@ -5,6 +5,7 @@ import {
   LOCATION_MATCH_THRESHOLD,
   locationScore,
 } from "../lib/locationMatch";
+import SportIcon from "../components/SportIcon";
 import type { Match } from "../types";
 import "./MatchBrowse.css";
 
@@ -163,8 +164,10 @@ export default function MatchBrowse() {
   }, [matches, filters]);
 
   return (
-    <section className="page match-browse">
-      <h1>Browse Matches</h1>
+    <section className="page match-browse" aria-labelledby="browse-title">
+      <div className="section-head">
+        <h2 id="browse-title">Browse matches</h2>
+      </div>
       <p className="page-subtitle">Find a game near you and jump in.</p>
 
       <form className="filters" onSubmit={(e) => e.preventDefault()}>
@@ -275,13 +278,16 @@ export default function MatchBrowse() {
               No matches found. Try widening your search.
             </p>
           ) : (
-            <ul className="match-list">
+            <ul className="match-list" role="list">
               {visibleMatches.map(({ match, locationScore: score }) => (
                 <li key={match.id}>
                   <Link to={`/matches/${match.id}`} className="match-card">
                     <div className="match-card-head">
-                      <h2>{match.title}</h2>
-                      <span className="match-card-sport">{match.sport}</span>
+                      <h3>{match.title}</h3>
+                      <span className="match-card-sport">
+                        <SportIcon sport={match.sport} size={15} />
+                        {match.sport}
+                      </span>
                     </div>
 
                     <dl className="match-card-meta">
