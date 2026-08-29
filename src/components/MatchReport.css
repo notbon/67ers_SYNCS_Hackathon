@@ -6,33 +6,43 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .attendance-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
+  gap: 14px;
+
+  padding: 14px 4px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.attendance-row:first-child {
+  padding-top: 4px;
+}
+
+.attendance-row:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
 }
 
 .attendance-row img {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   object-fit: cover;
   border-radius: 50%;
 }
 
 .attendance-name {
   min-width: 0;
+
   color: var(--text-h);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   text-decoration: none;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -46,9 +56,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+
   cursor: pointer;
 }
 
@@ -56,12 +68,12 @@
   width: 18px;
   height: 18px;
   margin: 0;
-  cursor: pointer;
+
   accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .attendance-list--readonly .attendance-row span:last-child {
-  flex: 0 0 auto;
   font-size: 13px;
   font-weight: 600;
 }
@@ -72,4 +84,105 @@
 
 .attended-no {
   color: var(--text);
+}
+
+/* Match Report */
+
+.match-report {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.match-report h2 {
+  margin: 0 0 22px;
+  font-size: 24px;
+  color: var(--text-h);
+}
+
+.match-report-loading {
+  margin-top: 24px;
+  color: var(--text);
+}
+
+.report-section {
+  margin-bottom: 18px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.report-section h3 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  color: var(--text-h);
+}
+
+
+/* Score */
+
+.score-editor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-team-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.score-editor input {
+  width: 70px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: 15px;
+  text-align: center;
+  outline: none;
+}
+
+.score-editor input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.score-sep {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.score-editor button {
+  margin-left: auto;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.score-editor button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.score-editor button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.score-display {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-h);
 }
