@@ -8,12 +8,180 @@
 }
 
 .match-details-card {
+  position: relative;
+
   width: 100%;
   max-width: 650px;
   background-color: white;
   padding: 36px;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Host-only three-dot menu ---------- */
+
+.match-host-menu {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.match-host-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: #444;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.match-host-menu-trigger:hover,
+.match-host-menu-trigger[aria-expanded="true"] {
+  background-color: #f0f1f3;
+  border-color: #e0e1e3;
+}
+
+.match-host-menu-list {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  min-width: 180px;
+  padding: 6px;
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.match-host-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #222;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.match-host-menu-item:hover {
+  background-color: #f7f8fa;
+}
+
+/* ---------- Host edit form ---------- */
+
+.match-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.match-edit-form h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  color: #222;
+}
+
+.match-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #777;
+}
+
+.match-edit-field input,
+.match-edit-field select,
+.match-edit-field textarea {
+  padding: 11px 12px;
+  border: 1px solid #d8d9dd;
+  border-radius: 8px;
+  background-color: white;
+  color: #222;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.match-edit-field textarea {
+  resize: vertical;
+}
+
+.match-edit-field input:focus,
+.match-edit-field select:focus,
+.match-edit-field textarea:focus {
+  border-color: #222;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.match-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.match-edit-error {
+  margin: 0;
+  color: #b73737;
+  font-size: 14px;
+}
+
+.match-edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.match-edit-save,
+.match-edit-cancel {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.match-edit-save {
+  border: none;
+  background-color: #222;
+  color: white;
+}
+
+.match-edit-cancel {
+  border: 1px solid #d8d9dd;
+  background: none;
+  color: #444;
+}
+
+.match-edit-save:hover,
+.match-edit-cancel:hover {
+  opacity: 0.85;
+}
+
+.match-edit-save:disabled,
+.match-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .match-details-header {
@@ -293,6 +461,9 @@
     grid-template-columns: 1fr;
   }
 
+  .match-edit-row {
+    grid-template-columns: 1fr;
+  }
   .participant-list {
     grid-template-columns: 1fr;
   }

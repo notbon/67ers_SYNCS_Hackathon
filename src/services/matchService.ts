@@ -28,6 +28,44 @@ export async function createMatch(match: CreateMatchInput) {
   return data;
 }
 
+// Fields a host is allowed to change after a match exists. Sport and the
+// geo coordinates are intentionally left out — those are set once at creation.
+export type UpdateMatchInput = {
+  title: string;
+  skill_level: string | null;
+  match_time: string;
+  location: string;
+  match_date: string;
+  max_players: number;
+  description: string | null;
+};
+
+/**
+ * Update an existing match. The `.eq("created_by", hostId)` guard means only
+ * the match's host can write, regardless of how permissive RLS is — a mismatch
+ * updates zero rows and `.single()` then throws, which the caller surfaces as
+ * "only the host can edit".
+ */
+export async function updateMatch(
+  matchId: string,
+  hostId: string,
+  updates: UpdateMatchInput,
+): Promise<Match> {
+  const { data, error } = await supabase
+    .from("matches")
+    .update(updates)
+    .eq("id", matchId)
+    .eq("created_by", hostId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Match;
+}
+
 /**
  * Fetch every match, ordered soonest-first. Filtering/searching (location,
  * time, skill level, sport, date) happens client-side in the Browse page so
