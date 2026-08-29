@@ -92,17 +92,36 @@
 }
 
 .hero h1 {
-  /* Inline backgrounds (.mark) are sized by the font's content area, not
-     line-height — anything under ~1.05 makes the orange block overlap the
-     line above. */
-  line-height: 1.1;
+  line-height: 1.12;
   margin: 0 0 24px;
   max-width: 12ch;
 }
 
-/* Breathing room around the highlighted word without re-introducing overlap */
+/*
+ * The highlight behind "GAME".
+ *
+ * An inline element's background paints across the font's whole content area
+ * (ascent to descent), which for Anton is far taller than the capitals — so a
+ * plain `background` bleeds up into the line above no matter what line-height
+ * is set. Instead the block is a pseudo-element inset from that content area,
+ * so its top and bottom edges are set explicitly rather than by font metrics.
+ */
 .hero h1 .mark {
-  padding: 0.04em 0.14em;
+  position: relative;
+  isolation: isolate;        /* keeps the z-index:-1 block inside this element */
+  background: none;
+  padding: 0 0.14em;         /* horizontal only — vertical padding would grow the block */
+}
+
+.hero h1 .mark::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.15em;               /* clear of the descenders on the line above */
+  bottom: 0.05em;
+  background: var(--accent);
+  z-index: -1;
 }
 
 .hero-sub {
