@@ -1,11 +1,8 @@
-// TODO (Person 1 — Browse Matches):
-// Fetch matches from Supabase (see src/lib/supabase.ts) and render them here.
-// Add your sport/location filters above the list.
+// The "/" route is the Browse Matches experience. The implementation lives in
+// MatchBrowse.tsx (search + filter by location, sport, skill level, date and
+// time); Home just mounts it so App.tsx routing stays untouched.
+import MatchBrowse from "./MatchBrowse";
+
 export default function Home() {
-  return (
-    <section className="page">
-      <h1>Browse Matches</h1>
-      <p className="page-subtitle">Find a game near you and jump in.</p>
-    </section>
-  );
+  return <MatchBrowse />;
 }
