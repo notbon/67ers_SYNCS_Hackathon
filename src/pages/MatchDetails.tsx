@@ -191,7 +191,6 @@ export default function MatchDetails() {
   const matchFull = participantCount >= match.max_players;
 
   return (
-<<<<<<< HEAD
     <div className="match-details-page">
       <div className="match-details-card">
         <div className="match-details-header">
@@ -262,17 +261,5 @@ export default function MatchDetails() {
         )}
       </div>
     </div>
-=======
-    <section className="page page-narrow">
-      <p className="eyebrow">Match</p>
-      <h1>Match details</h1>
-      <p className="page-subtitle">
-        Roster, location and the join button will live here.
-      </p>
-      <p className="placeholder-note">
-        Match ID: <code>{id}</code>
-      </p>
-    </section>
->>>>>>> 32f59dd27f8a9b9c53fe1aae4b42144f2633e0cf
   );
 }
