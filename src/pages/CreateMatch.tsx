@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createMatch } from "../services/matchService";
+import "./CreateMatch.css";
 
 function CreateMatch() {
   const [title, setTitle] = useState("");
@@ -44,11 +45,14 @@ function CreateMatch() {
 }
   }
 
+  
   return (
-    <div>
+  <div className="create-match-page">
+    <div className="create-match-card">
       <h1>Create Match</h1>
+      <p>Set up a game and find people to join.</p>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="create-match-form">
         <input
           required
           placeholder="Match title"
@@ -94,6 +98,8 @@ function CreateMatch() {
         <input
           required
           type="number"
+          min="2"
+          max="100"
           placeholder="Max players"
           value={maxPlayers}
           onChange={(e) => setMaxPlayers(e.target.value)}
@@ -118,10 +124,13 @@ function CreateMatch() {
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <button type="submit">Create Match</button>
+        <button type="submit" className="create-match-button">
+          Create Match
+        </button>
       </form>
     </div>
-  );
+  </div>
+);
 }
 
 export default CreateMatch;

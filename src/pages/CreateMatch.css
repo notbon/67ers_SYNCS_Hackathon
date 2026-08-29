@@ -1,0 +1,100 @@
+.create-match-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 20px;
+  background-color: #f5f6f8;
+}
+
+.create-match-card {
+  width: 100%;
+  max-width: 650px;
+  background-color: white;
+  padding: 36px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.create-match-card h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  color: #222;
+}
+
+.create-match-card > p {
+  margin: 0 0 28px;
+  color: #666;
+  font-size: 15px;
+}
+
+.create-match-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.create-match-form input,
+.create-match-form select,
+.create-match-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  background-color: white;
+  font-family: inherit;
+  font-size: 15px;
+  color: #222;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.create-match-form input:focus,
+.create-match-form select:focus,
+.create-match-form textarea:focus {
+  border-color: #555;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.create-match-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.create-match-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 8px;
+  background-color: #222;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.create-match-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.create-match-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .create-match-page {
+    padding: 30px 16px;
+  }
+
+  .create-match-card {
+    padding: 24px;
+  }
+
+  .create-match-card h1 {
+    font-size: 27px;
+  }
+}
