@@ -10,6 +10,7 @@ import useReveal from "../hooks/useReveal";
 import { fetchMatches } from "../services/matchService";
 import type { Match } from "../types";
 import { sportVars } from "../lib/sportTheme";
+import sydneySkyline from "../assets/sydney-skyline.svg";
 import "./Home.css";
 
 // Keep in step with the options in CreateMatch.tsx and MatchBrowse.tsx.
@@ -233,6 +234,9 @@ export default function Home() {
   return (
     <div ref={revealRef}>
       <section className="hero full-bleed section-dark" aria-labelledby="hero-title">
+        <img className="hero-map" src={sydneySkyline} alt="" aria-hidden="true" />
+        <span className="hero-scrim" aria-hidden="true" />
+
         <div className="wrap hero-inner">
           <p className="eyebrow">Pickup sport, sorted</p>
           <h1 id="hero-title">
