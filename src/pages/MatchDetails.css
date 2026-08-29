@@ -285,18 +285,19 @@
   border-radius: 10px;
 }
 
-/* Roster rows are links to the player's public profile */
-a.participant-card--link {
+/* The clickable part of a roster row → the player's public profile. */
+.participant-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
   text-decoration: none;
   color: inherit;
-  transition:
-    border-color 0.15s,
-    background-color 0.15s;
 }
 
-a.participant-card--link:hover {
-  border-color: #c9ccd2;
-  background-color: #eef0f3;
+.participant-card-main:hover .participant-view {
+  color: #444;
 }
 
 .participant-view {
@@ -306,8 +307,104 @@ a.participant-card--link:hover {
   font-weight: 600;
 }
 
-a.participant-card--link:hover .participant-view {
-  color: #444;
+/* Per-player controls on the roster: Report for everyone in the match,
+   Make host / Kick for the host. */
+.participant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.participant-actions button {
+  padding: 7px 12px;
+  border: 1px solid #d8d9dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.participant-actions button:hover:not(:disabled) {
+  background: #f0f1f3;
+}
+
+.participant-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.participant-actions .participant-kick {
+  border-color: #e2b8b8;
+  color: #b73737;
+}
+
+.participant-actions .participant-kick:hover:not(:disabled) {
+  background: rgba(183, 55, 55, 0.08);
+}
+
+.participant-actions .participant-report {
+  border-color: #e6c9a0;
+  color: #9a6008;
+}
+
+.participant-actions .participant-report:hover:not(:disabled) {
+  background: rgba(154, 96, 8, 0.08);
+}
+
+.host-label {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background-color: #2a6df4;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Host "you can't leave — transfer first" panel */
+.host-leave-panel {
+  padding: 16px;
+  border: 1px dashed #cfd2d8;
+  border-radius: 10px;
+  background: #f7f8fa;
+}
+
+.host-leave-note {
+  margin: 0 0 12px;
+  color: #555;
+  font-size: 14px;
+}
+
+.host-leave-empty {
+  margin: 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.host-transfer-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.host-transfer-row select {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid #d8d9dd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  color: #222;
+}
+
+.host-transfer-row .leave-match-button {
+  width: auto;
+  flex-shrink: 0;
 }
 
 .participant-name-link {

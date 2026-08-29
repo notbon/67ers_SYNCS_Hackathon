@@ -9,12 +9,17 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
   fetchParticipants,
+  kickPlayer,
+  reportPlayer,
+  transferHost,
   updateMatch,
   type MatchPlayer,
   type UpdateMatchInput,
 } from "../services/matchService";
+import { matchRole } from "../lib/matchRoles";
 import Avatar from "../components/Avatar";
 import MatchReport from "../components/MatchReport";
+import ReportPlayerModal from "../components/ReportPlayerModal";
 import "./MatchDetails.css";
 
 const SKILL_LEVELS = [
@@ -94,6 +99,13 @@ export default function MatchDetails() {
   const [form, setForm] = useState<EditForm | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Transfer-host (a host must hand off the role before they can leave)
+  const [transferTo, setTransferTo] = useState("");
+  const [transferring, setTransferring] = useState(false);
+
+  // "Report a player" splash — the player currently being reported, or null.
+  const [reportTarget, setReportTarget] = useState<MatchPlayer | null>(null);
 
   /*
    * Uses the exact same roster system as MatchBrowse.
@@ -508,6 +520,12 @@ export default function MatchDetails() {
 
     if (!user) return;
 
+    // The host can't leave — they have to transfer the role first.
+    if (match?.created_by === user.id) {
+      alert("Transfer the host role to another player before you leave.");
+      return;
+    }
+
     try {
       setActionLoading(true);
 
@@ -532,6 +550,76 @@ export default function MatchDetails() {
     }
   }
 
+  // Host action: remove a player from the roster.
+  async function handleKick(userId: string) {
+    if (!id) return;
+    if (!window.confirm("Remove this player from the match?")) return;
+
+    try {
+      setActionLoading(true);
+      await kickPlayer(id, userId);
+      setPendingRequests((requests) =>
+        requests.filter((request) => request.user_id !== userId),
+      );
+      await loadParticipants(id);
+    } catch (error) {
+      console.error("Error removing player:", error);
+      alert("Could not remove player.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // Host action: hand the host role to `newHostId`. The old host keeps their
+  // roster spot but drops to a regular player (and can then leave).
+  async function handleTransferHost(newHostId: string) {
+    if (!id || !currentUserId || !newHostId) return;
+
+    const newHostName =
+      participants.find((p) => p.id === newHostId)?.name ?? "this player";
+    if (
+      !window.confirm(
+        `Make ${newHostName} the host? You'll become a regular player and lose host controls.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setTransferring(true);
+      await transferHost(id, currentUserId, newHostId);
+
+      // Re-pull the match so `created_by` (and every derived permission) is
+      // fresh, plus the roster.
+      const { data: refreshed } = await supabase
+        .from("matches")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (refreshed) setMatch(refreshed);
+      await loadParticipants(id);
+
+      setTransferTo("");
+      setPendingRequests([]);
+      alert("Host role transferred. You're now a regular player.");
+    } catch (error) {
+      console.error("Error transferring host:", error);
+      alert("Could not transfer the host role.");
+    } finally {
+      setTransferring(false);
+    }
+  }
+
+  // Any player in the match can report another. `reportPlayer` fails soft when
+  // the moderation table isn't set up (see matchService).
+  async function submitReport(category: string, details: string) {
+    if (!id || !currentUserId || !reportTarget) {
+      return { stored: false };
+    }
+    const reason = details ? `${category}: ${details}` : category;
+    return reportPlayer(id, currentUserId, reportTarget.id, reason);
+  }
+
   if (loading) {
     return (
       <div className="match-details-page">
@@ -553,9 +641,18 @@ export default function MatchDetails() {
     );
   }
 
-  const isHost = currentUserId !== null && match.created_by === currentUserId;
-  const matchFull =
-    participantCount >= match.max_players;
+  const role = matchRole(
+    match.created_by,
+    currentUserId,
+    joinStatus === "approved",
+  );
+  const isHost = role === "host";
+  const isParticipant = role !== "guest";
+  const isPostMatch = new Date(match.match_date) < new Date();
+  const matchFull = participantCount >= match.max_players;
+
+  // Approved players the host could hand off to / who show host action buttons.
+  const otherPlayers = participants.filter((p) => p.id !== currentUserId);
 
   return (
     <div className="match-details-page">
@@ -827,37 +924,72 @@ export default function MatchDetails() {
                 </p>
               ) : (
                 <div className="participant-list">
-                  {participants.map((player) => (
-                    <Link
-                      key={player.id}
-                      to={`/players/${player.id}`}
-                      className="participant-card participant-card--link"
-                    >
-                      <Avatar
-                        id={player.id}
-                        name={player.name}
-                        url={player.avatar_url}
-                        size={50}
-                        className="participant-avatar-image"
-                      />
+                  {participants.map((player) => {
+                    const isSelf = player.id === currentUserId;
+                    const playerIsHost = player.id === match.created_by;
+                    return (
+                      <div key={player.id} className="participant-card">
+                        <Link
+                          to={`/players/${player.id}`}
+                          className="participant-card-main"
+                        >
+                          <Avatar
+                            id={player.id}
+                            name={player.name}
+                            url={player.avatar_url}
+                            size={50}
+                            className="participant-avatar-image"
+                          />
 
-                      <div className="participant-details">
-                        <div className="participant-name">
-                          <span>
-                            {player.name || "Player"}
-                          </span>
+                          <div className="participant-details">
+                            <div className="participant-name">
+                              <span>{player.name || "Player"}</span>
+                              {playerIsHost && (
+                                <span className="host-label">Host</span>
+                              )}
+                              {isSelf && (
+                                <span className="you-label">You</span>
+                              )}
+                            </div>
+                            <p className="participant-view">View profile →</p>
+                          </div>
+                        </Link>
 
-                          {player.id ===
-                            currentUserId && (
-                            <span className="you-label">
-                              You
-                            </span>
-                          )}
-                        </div>
-                        <p className="participant-view">View profile →</p>
+                        {isParticipant && !isSelf && (
+                          <div className="participant-actions">
+                            {isHost && !playerIsHost && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleTransferHost(player.id)
+                                  }
+                                  disabled={transferring || actionLoading}
+                                >
+                                  Make host
+                                </button>
+                                <button
+                                  type="button"
+                                  className="participant-kick"
+                                  onClick={() => handleKick(player.id)}
+                                  disabled={actionLoading}
+                                >
+                                  Kick
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              className="participant-report"
+                              onClick={() => setReportTarget(player)}
+                            >
+                              Report
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -946,11 +1078,13 @@ export default function MatchDetails() {
               </p>
             </div>
 
-            {/* POST-MATCH REPORT: score, attendance, endorsements, feedback */}
-            {new Date(match.match_date) < new Date() && (
+            {/* POST-MATCH: host-only report + all-player endorse / report /
+                feedback. Only people in the match see it at all. */}
+            {isPostMatch && isParticipant && (
               <MatchReport
                 matchId={match.id}
-                isHost={isHost}
+                canManage={isHost}
+                canParticipate={isParticipant}
                 currentUserId={currentUserId}
                 participants={participants}
               />
@@ -963,16 +1097,53 @@ export default function MatchDetails() {
               </div>
             )}
 
-            {/* JOIN / LEAVE */}
-            {joinStatus === "approved" ? (
+            {/* ROLE ACTION: host transfers, players leave, guests join */}
+            {isHost ? (
+              <div className="host-leave-panel">
+                <p className="host-leave-note">
+                  As host you can't leave. Transfer the host role to hand off
+                  and become a regular player.
+                </p>
+                {otherPlayers.length === 0 ? (
+                  <p className="host-leave-empty">
+                    No other players to transfer to yet.
+                  </p>
+                ) : (
+                  <div className="host-transfer-row">
+                    <select
+                      value={transferTo}
+                      onChange={(event) =>
+                        setTransferTo(event.target.value)
+                      }
+                      disabled={transferring}
+                    >
+                      <option value="">Choose a player…</option>
+                      {otherPlayers.map((player) => (
+                        <option key={player.id} value={player.id}>
+                          {player.name || "Player"}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="leave-match-button"
+                      onClick={() => handleTransferHost(transferTo)}
+                      disabled={!transferTo || transferring}
+                    >
+                      {transferring
+                        ? "Transferring..."
+                        : "Transfer host role"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : joinStatus === "approved" ? (
               <button
                 className="leave-match-button"
                 onClick={handleLeave}
                 disabled={actionLoading}
               >
-                {actionLoading
-                  ? "Leaving..."
-                  : "Leave Match"}
+                {actionLoading ? "Leaving..." : "Leave Match"}
               </button>
             ) : joinStatus === "pending" ? (
               <button
@@ -980,25 +1151,19 @@ export default function MatchDetails() {
                 onClick={handleLeave}
                 disabled={actionLoading}
               >
-                {actionLoading
-                  ? "Cancelling..."
-                  : "Cancel Request"}
+                {actionLoading ? "Cancelling..." : "Cancel Request"}
               </button>
             ) : (
               <button
                 className="join-match-button"
                 onClick={handleJoin}
-                disabled={
-                  actionLoading || matchFull
-                }
+                disabled={actionLoading || matchFull}
               >
                 {matchFull
                   ? "Match Full"
                   : actionLoading
                     ? "Joining..."
-                    : match.skill_level ===
-                          "Advanced" &&
-                        gamesPlayed < 5
+                    : match.skill_level === "Advanced" && gamesPlayed < 5
                       ? "Request to Join"
                       : "Join Match"}
               </button>
@@ -1006,6 +1171,14 @@ export default function MatchDetails() {
           </>
         )}
       </div>
+
+      {reportTarget && (
+        <ReportPlayerModal
+          playerName={reportTarget.name || "this player"}
+          onClose={() => setReportTarget(null)}
+          onSubmit={submitReport}
+        />
+      )}
     </div>
   );
 }
