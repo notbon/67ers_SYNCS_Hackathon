@@ -46,3 +46,33 @@ export async function fetchMatches(): Promise<Match[]> {
 
   return (data ?? []) as Match[];
 }
+
+/**
+ * How many players have signed up to each of the given matches.
+ * Returns a Map keyed by match id; matches with nobody signed up are absent.
+ *
+ * Roster counts are decorative — a failure resolves to an empty Map so the
+ * match list still renders.
+ */
+export async function fetchParticipantCounts(
+  matchIds: string[],
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (matchIds.length === 0) return counts;
+
+  const { data, error } = await supabase
+    .from("match_participants")
+    .select("match_id")
+    .in("match_id", matchIds);
+
+  if (error) {
+    console.error("Failed to load roster counts:", error);
+    return counts;
+  }
+
+  ((data ?? []) as { match_id: string }[]).forEach((row) => {
+    counts.set(row.match_id, (counts.get(row.match_id) ?? 0) + 1);
+  });
+
+  return counts;
+}

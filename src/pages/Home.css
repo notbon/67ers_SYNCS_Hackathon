@@ -75,9 +75,11 @@
 }
 
 /* ---------- Sport band (filter) ---------- */
+/* Chips carry --sport / --sport-tint, so each sport reads as its own thing
+   rather than six identical blocks. */
 
 .sport-band {
-  background: var(--accent);
+  background: var(--paper-2);
   border-bottom: 3px solid var(--ink);
 }
 
@@ -85,8 +87,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .sport-band-list {
@@ -96,11 +98,11 @@
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 10px;
   align-items: center;
 }
 
-/* Black on orange = 6.7:1 */
+/* Resting: sport colour on its own pale tint (well past 4.5:1) */
 .sport-chip {
   display: inline-flex;
   align-items: center;
@@ -109,12 +111,12 @@
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink);
-  background: transparent;
+  letter-spacing: 0.07em;
+  color: var(--sport);
+  background: var(--sport-tint);
   border: 2px solid transparent;
   border-radius: 0;
-  padding: 8px 12px;
+  padding: 9px 14px;
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
     transform 0.16s ease, box-shadow 0.16s ease;
@@ -125,7 +127,7 @@
 }
 
 .sport-chip:hover {
-  border-color: var(--ink);
+  border-color: var(--sport);
   transform: translateY(-2px);
 }
 
@@ -137,16 +139,13 @@
   transform: translateY(0);
 }
 
-/* Selected: inverted block so the active filter is unmistakable */
+/* Selected: filled in the sport colour. White on these tokens also clears
+   4.5:1 — that's the constraint each colour was picked against. */
 .sport-chip.is-selected {
-  background: var(--ink);
-  color: var(--accent);
-  border-color: var(--ink);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
-}
-
-.sport-chip.is-selected svg {
-  transform: scale(1.06);
+  background: var(--sport);
+  color: #ffffff;
+  border-color: var(--sport);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .sport-band-clear {

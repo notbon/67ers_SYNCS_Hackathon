@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
+import ChatWidget from './ChatWidget';
 
 // Shared page shell: skip link, Navbar up top, routed page content in the
 // middle. Individual pages (src/pages/*) should NOT render their own nav —
@@ -22,6 +23,7 @@ export function Layout() {
           <span>Pickup sport, sorted.</span>
         </div>
       </footer>
+      <ChatWidget />
     </div>
   );
 }
