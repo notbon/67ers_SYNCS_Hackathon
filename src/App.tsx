@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import CreateMatch from './pages/CreateMatch';
 import MatchDetails from './pages/MatchDetails';
 import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 import './App.css';
 
 // Route map for the whole app. Person 1-4: your page component already
@@ -18,6 +19,7 @@ function App() {
           <Route path="/create" element={<CreateMatch />} />
           <Route path="/matches/:id" element={<MatchDetails />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

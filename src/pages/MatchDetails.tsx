@@ -8,9 +8,15 @@ export default function MatchDetails() {
   const { id } = useParams<{ id: string }>();
 
   return (
-    <section className="page">
-      <h1>Match Details</h1>
-      <p className="page-subtitle">Match ID: {id}</p>
+    <section className="page page-narrow">
+      <p className="eyebrow">Match</p>
+      <h1>Match details</h1>
+      <p className="page-subtitle">
+        Roster, location and the join button will live here.
+      </p>
+      <p className="placeholder-note">
+        Match ID: <code>{id}</code>
+      </p>
     </section>
   );
 }
