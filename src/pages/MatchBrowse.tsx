@@ -8,6 +8,8 @@ import {
 import SportIcon from "../components/SportIcon";
 import HostBadge from "../components/HostBadge";
 import { fetchHostsByToken } from "../services/hostService";
+import { fetchParticipantCounts } from "../services/matchService";
+import { sportVars } from "../lib/sportTheme";
 import { getHostToken, type PlayerToken } from "../lib/playerToken";
 import type { Match, MatchHost } from "../types";
 import "./MatchBrowse.css";
@@ -120,6 +122,7 @@ export default function MatchBrowse({
 }: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
+  const [rosters, setRosters] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -147,6 +150,22 @@ export default function MatchBrowse({
       cancelled = true;
     };
   }, []);
+
+  // How many players are signed up to each match, in one batch.
+  useEffect(() => {
+    if (matches.length === 0) return;
+    let cancelled = false;
+
+    fetchParticipantCounts(matches.map((m) => m.id))
+      .then((counts) => {
+        if (!cancelled) setRosters(counts);
+      })
+      .catch((err) => console.error("Failed to load roster counts:", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
 
   // Resolve host profiles (photo + name) for the loaded matches in one batch.
   // Purely decorative, so failures inside fetchHostsByToken degrade to no badge.
@@ -409,48 +428,66 @@ export default function MatchBrowse({
                   className="match-item"
                   style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
                 >
-                  <Link to={`/matches/${match.id}`} className="match-card">
-                    <div className="match-card-head">
-                      <h3>{match.title}</h3>
+                  <Link
+                    to={`/matches/${match.id}`}
+                    className="match-card"
+                    style={sportVars(match.sport)}
+                  >
+                    <span className="match-card-bar" aria-hidden="true" />
+
+                    <div className="match-card-top">
                       <span className="match-card-sport">
                         <SportIcon sport={match.sport} size={15} />
                         {match.sport}
                       </span>
+                      <span className="match-card-skill">
+                        {match.skill_level ?? "All levels"}
+                      </span>
                     </div>
 
-                    <dl className="match-card-meta">
-                      <div>
-                        <dt>Location</dt>
-                        <dd>
-                          {match.location}
-                          {filters.location.trim() && score < 0.95 && (
-                            <span className="match-card-approx">
-                              {" "}
-                              · close match
-                            </span>
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>When</dt>
-                        <dd>
-                          {formatDate(match.match_date)} ·{" "}
-                          {formatTime(match.match_time)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Skill</dt>
-                        <dd>{match.skill_level ?? "All levels"}</dd>
-                      </div>
-                      <div>
-                        <dt>Players</dt>
-                        <dd>up to {match.max_players}</dd>
-                      </div>
+                    <h3>{match.title}</h3>
+
+                    <dl className="match-card-facts">
+                      <dt className="visually-hidden">Location</dt>
+                      <dd>
+                        {match.location}
+                        {filters.location.trim() && score < 0.95 && (
+                          <span className="match-card-approx"> · close match</span>
+                        )}
+                      </dd>
+                      <dt className="visually-hidden">When</dt>
+                      <dd>
+                        {formatDate(match.match_date)} ·{" "}
+                        {formatTime(match.match_time)}
+                      </dd>
                     </dl>
 
                     <div className="match-card-foot">
-                      <HostBadge host={hostFor(match)} />
+                      <HostBadge host={hostFor(match)} size={34} />
+                      <span className="match-roster">
+                        <span className="match-roster-count">
+                          {rosters.get(match.id) ?? 0}
+                          <span className="match-roster-max">
+                            /{match.max_players}
+                          </span>
+                        </span>
+                        <span className="match-roster-label">going</span>
+                      </span>
                     </div>
+
+                    <span
+                      className="match-roster-bar"
+                      aria-hidden="true"
+                      style={{
+                        // Clamp so an over-subscribed match doesn't overflow.
+                        "--fill": `${Math.min(
+                          100,
+                          match.max_players > 0
+                            ? ((rosters.get(match.id) ?? 0) / match.max_players) * 100
+                            : 0,
+                        )}%`,
+                      } as React.CSSProperties}
+                    />
                   </Link>
                 </li>
               ))}
