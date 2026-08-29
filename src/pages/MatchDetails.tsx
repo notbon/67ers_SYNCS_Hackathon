@@ -50,6 +50,14 @@ export default function MatchDetails() {
   const [gamesPlayed, setGamesPlayed] =
     useState(0);
 
+  const [pendingRequests, setPendingRequests] = useState<
+    {
+      user_id: string;
+      name: string;
+      games_played: number;
+    }[]
+  >([]);
+
   /*
    * Uses the exact same roster system as MatchBrowse.
    *
@@ -184,6 +192,43 @@ export default function MatchDetails() {
           setGamesPlayed(
             stats?.games_played ?? 0
           );
+
+          // If the current user is the host, get pending join requests
+          if (matchData.created_by === user.id) {
+            const { data: requests, error: requestsError } = await supabase
+              .from("match_participants")
+              .select(`
+                user_id,
+                users (
+                  name
+                )
+              `)
+              .eq("match_id", id)
+              .eq("status", "pending");
+
+            if (requestsError) {
+              throw requestsError;
+            }
+
+            const formattedRequests = await Promise.all(
+            (requests ?? []).map(async (request: any) => {
+              const { data: playerStats } = await supabase
+                .from("user_sport_stats")
+                .select("games_played")
+                .eq("user_id", request.user_id)
+                .eq("sport", matchData.sport)
+                .maybeSingle();
+
+              return {
+                user_id: request.user_id,
+                name: request.users?.name ?? "Player",
+                games_played: playerStats?.games_played ?? 0,
+              };
+            })
+          );
+
+          setPendingRequests(formattedRequests);
+          }
         }
       } catch (error) {
         console.error(
@@ -243,11 +288,16 @@ export default function MatchDetails() {
 
       const { error } = await supabase
         .from("match_participants")
-        .insert({
-          match_id: id,
-          user_id: user.id,
-          status,
-        });
+        .upsert(
+          {
+            match_id: id,
+            user_id: user.id,
+            status,
+          },
+          {
+            onConflict: "match_id,user_id",
+          }
+        );
 
       if (error) {
         throw error;
@@ -275,6 +325,80 @@ export default function MatchDetails() {
       setActionLoading(false);
     }
   }
+
+  async function handleApprove(userId: string) {
+  if (!id || !match) return;
+
+  // Don't approve someone if the match filled up
+  if (participantCount >= match.max_players) {
+    alert("This match is already full.");
+    return;
+  }
+
+  try {
+    setActionLoading(true);
+
+    const { error } = await supabase
+      .from("match_participants")
+      .update({
+        status: "approved",
+      })
+      .eq("match_id", id)
+      .eq("user_id", userId)
+      .eq("status", "pending");
+
+    if (error) {
+      throw error;
+    }
+
+    // Remove them from the pending requests section
+    setPendingRequests((requests) =>
+      requests.filter(
+        (request) => request.user_id !== userId
+      )
+    );
+
+    // Reload player roster
+    await loadParticipants(id);
+  } catch (error) {
+    console.error("Error approving player:", error);
+    alert("Could not approve player.");
+  } finally {
+    setActionLoading(false);
+  }
+}
+
+async function handleReject(userId: string) {
+  if (!id) return;
+
+  try {
+    setActionLoading(true);
+
+    const { error } = await supabase
+      .from("match_participants")
+      .update({
+        status: "rejected",
+      })
+      .eq("match_id", id)
+      .eq("user_id", userId)
+      .eq("status", "pending");
+
+    if (error) {
+      throw error;
+    }
+
+    setPendingRequests((requests) =>
+      requests.filter(
+        (request) => request.user_id !== userId
+      )
+    );
+  } catch (error) {
+    console.error("Error rejecting player:", error);
+    alert("Could not reject player.");
+  } finally {
+    setActionLoading(false);
+  }
+}
 
   async function handleLeave() {
     if (!id) {
@@ -480,6 +604,55 @@ export default function MatchDetails() {
           )}
 
         </div>
+
+        {match.created_by === currentUserId && pendingRequests.length > 0 && (
+        <div className="join-requests">
+          <div className="participants-heading">
+            <h2>Join Requests</h2>
+
+            <span className="participants-count">
+              {pendingRequests.length} pending
+            </span>
+          </div>
+
+          <div className="participant-list">
+            {pendingRequests.map((request) => (
+              <div
+                key={request.user_id}
+                className="participant-card"
+              >
+                <div className="participant-details">
+                  <div className="participant-name">
+                    <span>{request.name}</span>
+                  </div>
+
+                  <span>
+                    {request.games_played} {match.sport} games played
+                  </span>
+                </div>
+
+                <div className="request-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleApprove(request.user_id)}
+                    disabled={actionLoading || matchFull}
+                  >
+                    {matchFull ? "Match Full" : "Approve"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleReject(request.user_id)}
+                    disabled={actionLoading}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
 
         <div className="match-description">
 
