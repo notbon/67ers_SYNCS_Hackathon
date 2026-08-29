@@ -112,3 +112,7 @@ gmp-place-autocomplete::part(input) {
   background-color: white;
   color: #222;
 }
+
+gmp-place-autocomplete {
+  color-scheme: light;
+}

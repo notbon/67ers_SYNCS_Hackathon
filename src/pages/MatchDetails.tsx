@@ -21,9 +21,12 @@ export default function MatchDetails() {
 
   const [match, setMatch] = useState<Match | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
-  const [joined, setJoined] = useState(false);
+  const [joinStatus, setJoinStatus] = useState<
+    "pending" | "approved" | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
 
   useEffect(() => {
     async function loadMatch() {
@@ -54,7 +57,8 @@ export default function MatchDetails() {
             count: "exact",
             head: true,
           })
-          .eq("match_id", id);
+          .eq("match_id", id)
+          .eq("status", "approved");
 
         if (countError) {
           throw countError;
@@ -70,12 +74,25 @@ export default function MatchDetails() {
         if (user) {
           const { data: participant } = await supabase
             .from("match_participants")
-            .select("user_id")
+            .select("status")
             .eq("match_id", id)
             .eq("user_id", user.id)
             .maybeSingle();
 
-          setJoined(participant !== null);
+          setJoinStatus(
+            participant?.status === "pending" ||
+            participant?.status === "approved"
+              ? participant.status
+              : null
+          );
+          const { data: stats } = await supabase
+            .from("user_sport_stats")
+            .select("games_played")
+            .eq("user_id", user.id)
+            .eq("sport", matchData.sport)
+            .maybeSingle();
+
+          setGamesPlayed(stats?.games_played ?? 0);
         }
       } catch (error) {
         console.error("Error loading match:", error);
@@ -109,19 +126,28 @@ export default function MatchDetails() {
     try {
       setActionLoading(true);
 
+      const status =
+        match.skill_level === "Advanced" && gamesPlayed < 5
+          ? "pending"
+          : "approved";
+
       const { error } = await supabase
         .from("match_participants")
         .insert({
           match_id: id,
           user_id: user.id,
+          status,
         });
 
       if (error) {
         throw error;
       }
 
-      setJoined(true);
-      setParticipantCount((count) => count + 1);
+      setJoinStatus(status);
+
+      if (status === "approved") {
+        setParticipantCount((count) => count + 1);
+      }
     } catch (error) {
       console.error("Error joining match:", error);
       alert("Could not join match.");
@@ -156,9 +182,11 @@ export default function MatchDetails() {
         throw error;
       }
 
-      setJoined(false);
+      if (joinStatus === "approved") {
+        setParticipantCount((count) => Math.max(count - 1, 0));
+      }
 
-      setParticipantCount((count) => Math.max(count - 1, 0));
+      setJoinStatus(null);
     } catch (error) {
       console.error("Error leaving match:", error);
       alert("Could not leave match.");
@@ -238,27 +266,37 @@ export default function MatchDetails() {
           </p>
         </div>
 
-        {joined ? (
-          <button
-            className="leave-match-button"
-            onClick={handleLeave}
-            disabled={actionLoading}
-          >
-            {actionLoading ? "Leaving..." : "Leave Match"}
-          </button>
-        ) : (
-          <button
-            className="join-match-button"
-            onClick={handleJoin}
-            disabled={actionLoading || matchFull}
-          >
-            {matchFull
-              ? "Match Full"
-              : actionLoading
-                ? "Joining..."
-                : "Join Match"}
-          </button>
-        )}
+        {joinStatus === "approved" ? (
+      <button
+        className="leave-match-button"
+        onClick={handleLeave}
+        disabled={actionLoading}
+      >
+        {actionLoading ? "Leaving..." : "Leave Match"}
+      </button>
+    ) : joinStatus === "pending" ? (
+      <button
+        className="leave-match-button"
+        onClick={handleLeave}
+        disabled={actionLoading}
+      >
+        {actionLoading ? "Cancelling..." : "Request Pending"}
+      </button>
+    ) : (
+      <button
+        className="join-match-button"
+        onClick={handleJoin}
+        disabled={actionLoading || matchFull}
+      >
+        {matchFull
+          ? "Match Full"
+          : actionLoading
+            ? "Joining..."
+            : match.skill_level === "Advanced" && gamesPlayed < 5
+              ? "Request to Join"
+              : "Join Match"}
+      </button>
+    )}
       </div>
     </div>
   );

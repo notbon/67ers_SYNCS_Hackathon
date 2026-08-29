@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createMatch } from "../services/matchService";
 import { useAuth } from "../context/AuthContext";
 import "./CreateMatch.css";
+import { supabase } from "../lib/supabase";
 
 function CreateMatch() {
   const { session } = useAuth();
@@ -117,6 +118,22 @@ async function initAutocomplete() {
         // "Matches You're Hosting" list (Profile) and carries a host badge.
         created_by: userId,
       });
+
+      const createdMatch = data?.[0];
+
+      if (createdMatch) {
+        const { error: participantError } = await supabase
+          .from("match_participants")
+          .insert({
+            match_id: createdMatch.id,
+            user_id: userId,
+            status: "approved",
+          });
+
+        if (participantError) {
+          throw participantError;
+        }
+      }
 
   console.log("Created match:", data);
   alert("Match created!");
