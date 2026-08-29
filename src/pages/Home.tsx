@@ -3,7 +3,7 @@
 // Home wraps it with the landing content above and owns the sport-band
 // filter, which it hands down to MatchBrowse as a controlled value.
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MatchBrowse from "./MatchBrowse";
 import SportIcon from "../components/SportIcon";
 import useReveal from "../hooks/useReveal";
@@ -66,6 +66,18 @@ function distanceKm(
 
 export default function Home() {
   const [sport, setSport] = useState("");
+
+  // Confirmation after creating a match, handed over by CreateMatch's redirect.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const justCreated = Boolean(
+    (location.state as { created?: unknown } | null)?.created,
+  );
+
+  // Clear the history state so a refresh doesn't show the banner again.
+  useEffect(() => {
+    if (justCreated) navigate("/", { replace: true, state: null });
+  }, [justCreated, navigate]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -360,6 +372,12 @@ export default function Home() {
           ))}
         </ol>
       </section>
+
+      {justCreated && (
+        <p className="created-banner" role="status">
+          Match created — it's in the list below.
+        </p>
+      )}
 
       <div id="browse">
         <MatchBrowse sport={sport} onSportChange={setSport} />

@@ -389,3 +389,20 @@
     min-height: 420px;
   }
 }
+/* Confirmation after a redirect from Create. Black on orange = 6.7:1 */
+.created-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard-sm);
+  padding: 14px 18px;
+  margin: 0 0 28px;
+  animation: riseIn 0.3s ease backwards;
+}

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createMatch } from "../services/matchService";
 import { useAuth } from "../context/AuthContext";
 import "./CreateMatch.css";
 import { supabase } from "../lib/supabase";
 
 function CreateMatch() {
+  const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
@@ -20,6 +22,10 @@ function CreateMatch() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
+  // When Google Maps can't load (missing/invalid key, Places API off, offline)
+  // fall back to a plain text location field rather than rendering nothing.
+  const [mapsFailed, setMapsFailed] = useState(false);
+
   const locationRef = useRef<HTMLDivElement>(null);
   const autocompleteElementRef =
   useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
@@ -27,14 +33,19 @@ function CreateMatch() {
   useEffect(() => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-    if (!apiKey) {
-      console.error("Google Maps API key missing");
+    if (!apiKey || apiKey === "<key>") {
+      console.error(
+        "Google Maps API key missing or still a placeholder — " +
+          "falling back to a plain location field.",
+      );
+      setMapsFailed(true);
       return;
     }
 
 async function initAutocomplete() {
   if (!locationRef.current) return;
 
+  try {
   const { PlaceAutocompleteElement } =
     await google.maps.importLibrary("places") as google.maps.PlacesLibrary;
 
@@ -67,6 +78,10 @@ async function initAutocomplete() {
   );
 
   locationRef.current.replaceWith(placeAutocomplete);
+  } catch (err) {
+    console.error("Google Places failed to initialise:", err);
+    setMapsFailed(true);
+  }
 }
 
     const existingScript = document.querySelector(
@@ -85,6 +100,10 @@ async function initAutocomplete() {
     script.async = true;
     script.defer = true;
     script.onload = initAutocomplete;
+    script.onerror = () => {
+      console.error("Google Maps script failed to load — check the API key.");
+      setMapsFailed(true);
+    };
 
     document.head.appendChild(script);
   }, []);
@@ -92,8 +111,15 @@ async function initAutocomplete() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (latitude === null || longitude === null) {
-      alert("Please select a location from the Google suggestions.");
+    if (!mapsFailed && (latitude === null || longitude === null)) {
+      alert("Please pick a location from the suggestions list.");
+      return;
+    }
+
+    // Without Maps we still need somewhere for the match to happen; it just
+    // won't have coordinates, so it won't appear in radius-filtered searches.
+    if (mapsFailed && !location.trim()) {
+      alert("Please enter a location.");
       return;
     }
 
@@ -135,23 +161,9 @@ async function initAutocomplete() {
         }
       }
 
-  console.log("Created match:", data);
-  alert("Match created!");
-
-  setTitle("");
-  setSport("");
-  setLocation("");
-  setLatitude(null);
-  setLongitude(null);
-  setMatchDate("");
-  setMatchTime("");
-  setMaxPlayers("");
-  setSkillLevel("");
-  setDescription("");
-
-  if (autocompleteElementRef.current) {
-    autocompleteElementRef.current.value = "";
-  }
+  // Straight to Browse — it refetches on mount, so the new match is there.
+  // `created` is passed so Browse can confirm it landed.
+  navigate("/", { state: { created: createdMatch?.id ?? true } });
 } catch (error) {
   console.error("Error creating match:", error);
   alert("Could not create match");
@@ -187,7 +199,16 @@ async function initAutocomplete() {
           <option value="Running">Running</option>
         </select>
 
-        <div ref={locationRef}></div>
+        {mapsFailed ? (
+          <input
+            required
+            placeholder="Location (e.g. Moore Park, Sydney)"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+        ) : (
+          <div ref={locationRef}></div>
+        )}
 
         <input
           required
