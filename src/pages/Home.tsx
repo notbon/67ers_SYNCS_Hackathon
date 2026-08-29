@@ -1,12 +1,15 @@
 // The "/" route is the Browse Matches experience. The match search itself
 // lives in MatchBrowse.tsx (filter by location, sport, skill, date, time);
-// Home wraps it with the landing content above so App.tsx routing and
-// MatchBrowse's logic stay untouched.
+// Home wraps it with the landing content above and owns the sport-band
+// filter, which it hands down to MatchBrowse as a controlled value.
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import MatchBrowse from "./MatchBrowse";
 import SportIcon from "../components/SportIcon";
+import useReveal from "../hooks/useReveal";
 import "./Home.css";
 
+// Keep in step with the options in CreateMatch.tsx and MatchBrowse.tsx.
 const SPORT_BAND = [
   "Soccer",
   "Basketball",
@@ -35,8 +38,20 @@ const STEPS = [
 ];
 
 export default function Home() {
+  const [sport, setSport] = useState("");
+  const revealRef = useReveal<HTMLDivElement>();
+
+  // Clicking the active sport clears it, so the band works as a toggle.
+  function pickSport(next: string) {
+    setSport((current) => (current === next ? "" : next));
+
+    document
+      .getElementById("browse")
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
   return (
-    <>
+    <div ref={revealRef}>
       <section className="hero full-bleed section-dark" aria-labelledby="hero-title">
         <div className="wrap hero-inner">
           <p className="eyebrow">Pickup sport, sorted</p>
@@ -62,14 +77,39 @@ export default function Home() {
       </section>
 
       <div className="sport-band full-bleed">
-        <ul className="wrap sport-band-inner" role="list">
-          {SPORT_BAND.map((sport) => (
-            <li key={sport} className="sport-chip">
-              <SportIcon sport={sport} size={26} />
-              <span>{sport}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="wrap sport-band-inner">
+          <h2 className="visually-hidden" id="sport-band-title">
+            Filter matches by sport
+          </h2>
+          <ul className="sport-band-list" role="list" aria-labelledby="sport-band-title">
+            {SPORT_BAND.map((name) => {
+              const selected = sport === name;
+              return (
+                <li key={name}>
+                  <button
+                    type="button"
+                    className={`sport-chip ${selected ? "is-selected" : ""}`}
+                    aria-pressed={selected}
+                    onClick={() => pickSport(name)}
+                  >
+                    <SportIcon sport={name} size={26} />
+                    <span>{name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          {sport && (
+            <button
+              type="button"
+              className="sport-band-clear"
+              onClick={() => setSport("")}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       <section className="steps" aria-labelledby="steps-title">
@@ -77,8 +117,13 @@ export default function Home() {
           How MatchUp works
         </h2>
         <ol className="steps-grid" role="list">
-          {STEPS.map((step) => (
-            <li key={step.n} className="step">
+          {STEPS.map((step, i) => (
+            <li
+              key={step.n}
+              className="step"
+              data-reveal
+              style={{ transitionDelay: `${i * 90}ms` }}
+            >
               <span className="step-n" aria-hidden="true">
                 {step.n}
               </span>
@@ -90,8 +135,8 @@ export default function Home() {
       </section>
 
       <div id="browse">
-        <MatchBrowse />
+        <MatchBrowse sport={sport} onSportChange={setSport} />
       </div>
-    </>
+    </div>
   );
 }

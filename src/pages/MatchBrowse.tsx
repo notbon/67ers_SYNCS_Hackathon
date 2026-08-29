@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchMatches } from "../services/matchService";
 import {
@@ -108,12 +108,25 @@ function formatTime(time: string): string {
   });
 }
 
-export default function MatchBrowse() {
+type MatchBrowseProps = {
+  /** Optional controlled sport filter, driven by the sport band on Home. */
+  sport?: string;
+  onSportChange?: (sport: string) => void;
+};
+
+export default function MatchBrowse({
+  sport,
+  onSportChange,
+}: MatchBrowseProps = {}) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [hosts, setHosts] = useState<Map<PlayerToken, MatchHost>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const locationContainerRef = useRef<HTMLDivElement>(null);
+
+  const locationAutocompleteRef =
+  useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,8 +168,96 @@ export default function MatchBrowse() {
     return (token && hosts.get(token)) || match.host || null;
   }
 
+  useEffect(() => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey) {
+    console.error("Google Maps API key missing");
+    return;
+  }
+
+  async function initAutocomplete() {
+    if (!locationContainerRef.current) return;
+
+    const { PlaceAutocompleteElement } =
+      await google.maps.importLibrary(
+        "places"
+      ) as google.maps.PlacesLibrary;
+
+    const autocomplete = new PlaceAutocompleteElement();
+
+    autocomplete.placeholder = "Search for a location";
+
+    locationAutocompleteRef.current = autocomplete;
+
+    autocomplete.addEventListener(
+      "gmp-select",
+      async (
+        event: google.maps.places.PlacePredictionSelectEvent
+      ) => {
+        const place = event.placePrediction.toPlace();
+
+        await place.fetchFields({
+          fields: ["displayName", "formattedAddress"],
+        });
+
+        const selectedLocation =
+          place.formattedAddress ||
+          place.displayName ||
+          "";
+
+        updateFilter("location", selectedLocation);
+      }
+    );
+
+    locationContainerRef.current.innerHTML = "";
+    locationContainerRef.current.appendChild(autocomplete);
+  }
+
+  if (window.google?.maps) {
+    initAutocomplete();
+    return;
+  }
+
+  const existingScript = document.querySelector(
+    'script[src*="maps.googleapis.com/maps/api/js"]'
+  );
+
+  if (existingScript) {
+    existingScript.addEventListener("load", initAutocomplete);
+    return;
+  }
+
+  const script = document.createElement("script");
+
+  script.src =
+    `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+
+  script.async = true;
+  script.defer = true;
+  script.onload = initAutocomplete;
+
+  document.head.appendChild(script);
+}, []);
+
+  // Mirror the controlled sport value into the internal filter state.
+  useEffect(() => {
+    if (sport === undefined) return;
+    setFilters((prev) => (prev.sport === sport ? prev : { ...prev, sport }));
+  }, [sport]);
+
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    if (key === "sport") onSportChange?.(value as string);
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    onSportChange?.("");
+
+    if (locationAutocompleteRef.current) {
+      locationAutocompleteRef.current.value = "";
+    }
   }
 
   const hasActiveFilters = useMemo(
@@ -195,15 +296,14 @@ export default function MatchBrowse() {
       <p className="page-subtitle">Find a game near you and jump in.</p>
 
       <form className="filters" onSubmit={(e) => e.preventDefault()}>
-        <label className="filter filter--wide">
+        <div className="filter filter--wide">
           <span>Location</span>
-          <input
-            type="search"
-            placeholder="e.g. Moore Park, Sydney"
-            value={filters.location}
-            onChange={(e) => updateFilter("location", e.target.value)}
+
+          <div
+            ref={locationContainerRef}
+            className="browse-location-autocomplete"
           />
-        </label>
+        </div>
 
         <label className="filter">
           <span>Sport</span>
@@ -276,7 +376,7 @@ export default function MatchBrowse() {
         <button
           type="button"
           className="filters-clear"
-          onClick={() => setFilters(EMPTY_FILTERS)}
+          onClick={clearFilters}
           disabled={!hasActiveFilters}
         >
           Clear filters
@@ -291,7 +391,7 @@ export default function MatchBrowse() {
 
       {!loading && !error && (
         <>
-          <p className="match-browse-count">
+          <p className="match-browse-count" aria-live="polite">
             {visibleMatches.length}{" "}
             {visibleMatches.length === 1 ? "match" : "matches"}
             {hasActiveFilters ? " matching your filters" : ""}
@@ -303,8 +403,12 @@ export default function MatchBrowse() {
             </p>
           ) : (
             <ul className="match-list" role="list">
-              {visibleMatches.map(({ match, locationScore: score }) => (
-                <li key={match.id}>
+              {visibleMatches.map(({ match, locationScore: score }, index) => (
+                <li
+                  key={match.id}
+                  className="match-item"
+                  style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
+                >
                   <Link to={`/matches/${match.id}`} className="match-card">
                     <div className="match-card-head">
                       <h3>{match.title}</h3>
