@@ -107,6 +107,139 @@
     color: var(--text-h);
   }
   
+  /* Interactive "Matches You're Hosting" list */
+  .profile-hosted-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .profile-hosted-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .profile-hosted-item:hover {
+    border-color: var(--accent-border);
+  }
+
+  .profile-hosted-summary {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font: inherit;
+    color: var(--text-h);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .profile-hosted-summary:hover {
+    background: var(--accent-bg);
+  }
+
+  .profile-hosted-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .profile-hosted-title {
+    font-weight: 600;
+    color: var(--text-h);
+  }
+
+  .profile-hosted-meta {
+    font-size: 14px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-hosted-chevron {
+    flex-shrink: 0;
+    color: var(--text);
+    transition: transform 0.2s;
+  }
+
+  .profile-hosted-chevron.is-open {
+    transform: rotate(180deg);
+  }
+
+  .profile-hosted-detail {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+    animation: profileHostedIn 0.18s ease;
+  }
+
+  @keyframes profileHostedIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .profile-hosted-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px 16px;
+    margin: 14px 0 0;
+  }
+
+  .profile-hosted-facts div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .profile-hosted-facts dt {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .profile-hosted-facts dd {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-h);
+  }
+
+  .profile-hosted-description {
+    margin: 14px 0 0;
+    font-size: 14px;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .profile-hosted-open {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .profile-hosted-open:hover {
+    text-decoration: underline;
+  }
+
   @media (max-width: 600px) {
     .profile-card {
       padding: 20px;

@@ -56,12 +56,15 @@ export async function updateProfile(userId: string, updates: UpdateProfileInput)
   return data as Profile | null;
 }
 
+// Every match hosted by this user, soonest first. No row cap or date filter,
+// so past and upcoming games all show up in "Matches You're Hosting".
 export async function fetchCreatedMatches(userId: string): Promise<Match[]> {
   const { data, error } = await supabase
     .from("matches")
     .select("*")
     .eq("created_by", userId)
-    .order("match_date", { ascending: true });
+    .order("match_date", { ascending: true })
+    .order("match_time", { ascending: true });
 
   if (error) throw error;
   return data ?? [];
