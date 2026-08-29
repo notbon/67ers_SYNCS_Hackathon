@@ -132,12 +132,19 @@ export default function Search() {
         Look someone up by name, or by their full email address if you know it.
       </p>
 
-      {userId && requests.length > 0 && (
+      {userId && (
         <section className="requests-panel" aria-labelledby="requests-title">
           <h2 id="requests-title" className="requests-title">
             Friend requests
             <span className="requests-count">{requests.length}</span>
           </h2>
+
+          {requests.length === 0 && (
+            <p className="requests-empty">
+              No pending requests. When someone adds you, they'll appear here.
+            </p>
+          )}
+
           <ul className="search-results" role="list">
             {requests.map((r) => (
               <li key={r.id} className="search-result">

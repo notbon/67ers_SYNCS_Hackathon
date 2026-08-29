@@ -241,3 +241,16 @@
 .requests-panel .search-result {
   background: var(--paper);
 }
+
+.requests-empty {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Muted count when there's nothing waiting */
+.requests-panel:has(.requests-empty) .requests-count {
+  background: var(--paper);
+  color: #6a6a70;
+  border-color: var(--border-soft);
+}

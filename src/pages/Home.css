@@ -56,8 +56,17 @@
 }
 
 .hero h1 {
-  margin: 0 0 22px;
+  /* Inline backgrounds (.mark) are sized by the font's content area, not
+     line-height — anything under ~1.05 makes the orange block overlap the
+     line above. */
+  line-height: 1.1;
+  margin: 0 0 24px;
   max-width: 12ch;
+}
+
+/* Breathing room around the highlighted word without re-introducing overlap */
+.hero h1 .mark {
+  padding: 0.04em 0.14em;
 }
 
 .hero-sub {
@@ -172,7 +181,7 @@
 /* ---------- Steps ---------- */
 
 .steps {
-  margin: 56px 0 64px;
+  margin: 48px 0 56px;
 }
 
 .steps-grid {
@@ -184,26 +193,24 @@
   gap: 20px;
 }
 
+/* Supporting copy, not content — a top rule instead of a heavy boxed card,
+   so the match list below stays the densest thing on the page. */
 .step {
-  border: 3px solid var(--ink);
-  background: var(--paper);
-  box-shadow: var(--shadow-hard);
-  padding: 24px 22px 26px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.5s ease;
-}
-
-.step:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 0 var(--accent);
+  border: none;
+  border-top: 3px solid var(--ink);
+  background: transparent;
+  box-shadow: none;
+  padding: 18px 0 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .step-n {
   display: block;
   font-family: var(--heading);
-  font-size: 40px;
+  font-size: 26px;
   line-height: 1;
   color: var(--accent);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .step h3 {
@@ -239,6 +246,6 @@
   }
 
   .step {
-    box-shadow: var(--shadow-hard-sm);
+    padding-top: 14px;
   }
 }
