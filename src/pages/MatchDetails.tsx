@@ -5,9 +5,10 @@ import {
   useState,
 } from "react";
 import type { FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
+  deleteMatch,
   fetchParticipants,
   kickPlayer,
   reportPlayer,
@@ -73,6 +74,7 @@ function toForm(match: Match): EditForm {
 
 export default function MatchDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const [match, setMatch] = useState<Match | null>(null);
   const [participants, setParticipants] = useState<MatchPlayer[]>([]);
@@ -550,6 +552,29 @@ export default function MatchDetails() {
     }
   }
 
+  async function handleDeleteMatch() {
+    if (!id || !currentUserId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this match? This cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+
+      await deleteMatch(id, currentUserId);
+
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting match:", error);
+      alert("Could not delete match.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   // Host action: remove a player from the roster.
   async function handleKick(userId: string) {
     if (!id) return;
@@ -689,6 +714,15 @@ export default function MatchDetails() {
                   onClick={startEditing}
                 >
                   Edit match details
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="match-host-menu-item"
+                  onClick={handleDeleteMatch}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Deleting..." : "Delete match"}
                 </button>
               </div>
             )}
