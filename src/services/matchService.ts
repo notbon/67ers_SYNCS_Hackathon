@@ -45,6 +45,26 @@ export async function createMatch(match: CreateMatchInput) {
   return data;
 }
 
+export async function deleteMatch(
+  matchId: string,
+  hostId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("matches")
+    .delete()
+    .eq("id", matchId)
+    .eq("created_by", hostId)
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error("Only the host can delete this match.");
+  }
+}
+
 /**
  * Move the host role to another user by repointing `matches.created_by`. The
  * `.eq("created_by", fromHostId)` guard means only the current host can do it,
