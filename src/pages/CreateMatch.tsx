@@ -8,7 +8,6 @@ import {
   todayIso,
 } from "../lib/timeGrid";
 import "./CreateMatch.css";
-import { supabase } from "../lib/supabase";
 
 function CreateMatch() {
   const navigate = useNavigate();
@@ -161,27 +160,18 @@ async function initAutocomplete() {
 
       const createdMatch = data?.[0];
 
-      if (createdMatch) {
-        const { error: participantError } = await supabase
-          .from("match_participants")
-          .insert({
-            match_id: createdMatch.id,
-            user_id: userId,
-            status: "approved",
-          });
+      // createMatch() (matchService.ts) already adds the host to
+      // match_participants via an upsert — don't insert again here, or the
+      // second insert collides with the row the upsert just created and the
+      // whole thing throws a 409 even though the match itself was created fine.
 
-        if (participantError) {
-          throw participantError;
-        }
-      }
-
-  // Straight to Browse — it refetches on mount, so the new match is there.
-  // `created` is passed so Browse can confirm it landed.
-  navigate("/", { state: { created: createdMatch?.id ?? true } });
-} catch (error) {
-  console.error("Error creating match:", error);
-  alert("Could not create match");
-}
+      // Straight to Browse — it refetches on mount, so the new match is there.
+      // `created` is passed so Browse can confirm it landed.
+      navigate("/", { state: { created: createdMatch?.id ?? true } });
+    } catch (error) {
+      console.error("Error creating match:", error);
+      alert("Could not create match");
+    }
   }
 
   
